@@ -1,10 +1,11 @@
 # app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
-# importa os routers
 from app.routes.users import router as users_router
 from app.routes.books import router as books_router
+from app.routes.auth_routes import router as auth_router
 
 app = FastAPI(
     title="BookTrack API",
@@ -12,9 +13,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# ---------------------------
 # CORS
-# ---------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,20 +22,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------------------
-# ROTA INICIAL
-# ---------------------------
 @app.get("/")
 def root():
-    return {"message": "🚀 API do BookTrack funcionando!"}
+    return {"message": "API funcionando!"}
 
-# ---------------------------
-# REGISTRO DOS ROUTERS
-# ---------------------------
+# ROTAS
+app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(users_router, prefix="/users", tags=["Users"])
 app.include_router(books_router, prefix="/books", tags=["Books"])
 
+# OPENAPI PERSONALIZADO
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
 
-from app.routes.auth_routes import router as auth_router
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
 
-app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+    # esquema de segurança
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+        }
+    }
+
+    # aplica bearer em tudo exceto /auth
+    for path, path_item in openapi_schema.get("paths", {}).items():
+        if not path.startswith("/auth"):
+            for method in path_item.values():
+                method.setdefault("security", [{"BearerAuth": []}])
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi

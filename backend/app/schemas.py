@@ -6,10 +6,18 @@ from typing import Optional
 # USERS
 # -------------------------
 
+
+
+# ... outras classes, se existirem
+
+# CORREÇÃO CRÍTICA: Adicionar 'name' como campo obrigatório
 class UserCreate(BaseModel):
+    name: str  # <--- CAMPO OBRIGATÓRIO AGORA!
     email: EmailStr
     password: str
     bio: Optional[str] = None
+    
+# ... outras classes, se existirem (como UserUpdate)
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
