@@ -1,15 +1,19 @@
-#dependencies.py
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.auth import verify_token
+from fastapi.security import HTTPBearer
+from jose import jwt, JWTError
 
-bearer_scheme = HTTPBearer()
+security = HTTPBearer()
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+SECRET_KEY = "ney"
+ALGORITHM = "HS256"
+
+def get_current_user(credentials=Depends(security)):
     token = credentials.credentials
-    payload = verify_token(token)
 
-    if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=403, detail="Invalid token")
 
     return payload
+

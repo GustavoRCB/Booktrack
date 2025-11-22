@@ -2,41 +2,101 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-# -------------------------
+# =======================================================
 # USERS
-# -------------------------
+# =======================================================
 
-
-
-# ... outras classes, se existirem
-
-# CORREÇÃO CRÍTICA: Adicionar 'name' como campo obrigatório
 class UserCreate(BaseModel):
-    name: str  # <--- CAMPO OBRIGATÓRIO AGORA!
+    name: str
     email: EmailStr
     password: str
     bio: Optional[str] = None
-    
-# ... outras classes, se existirem (como UserUpdate)
+
 
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     bio: Optional[str] = None
 
-# -------------------------
-# BOOKS
-# -------------------------
 
-class BookCreate(BaseModel):
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    bio: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+# =======================================================
+# PUBLIC BOOKS (Catálogo Global)
+# =======================================================
+
+class PublicBookCreate(BaseModel):
     title: str
     author: Optional[str] = None
     description: Optional[str] = None
+    cover_url: Optional[str] = None
     published_year: Optional[int] = None
+    total_pages: Optional[int] = None
 
-class BookUpdate(BaseModel):
-    title: Optional[str] = None
-    author: Optional[str] = None
-    description: Optional[str] = None
-    published_year: Optional[int] = None
+
+class PublicBookResponse(PublicBookCreate):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+# =======================================================
+# USER BOOKS (Biblioteca do Usuário)
+# =======================================================
+
+class UserBookResponse(BaseModel):
+    id: int        # id da tabela user_books
+    user_id: int
+    book_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class UserBookDetailed(BaseModel):
+    user_book_id: int
+    title: str
+    author: Optional[str]
+    description: Optional[str]
+    cover_url: Optional[str]
+    published_year: Optional[int]
+    total_pages: Optional[int]
+    status: str = "want"
+
+    class Config:
+        from_attributes = True
+
+
+# =======================================================
+# PROGRESSO DE LEITURA
+# =======================================================
+
+class ProgressUpdate(BaseModel):
+    status: str  # want | reading | read
+
+
+# =======================================================
+# REVIEWS (não usado ainda, mas corrigido)
+# =======================================================
+
+class ReviewCreate(BaseModel):
+    rating: int
+    comment: Optional[str] = None
+
+
+class ReviewResponse(ReviewCreate):
+    id: int
+    user_book_id: int
+
+    class Config:
+        from_attributes = True
 

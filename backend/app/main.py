@@ -3,9 +3,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
+# ROTAS EXISTENTES
 from app.routes.users import router as users_router
-from app.routes.books import router as books_router
+
 from app.routes.auth_routes import router as auth_router
+
+# ⬇️ NOVAS ROTAS
+from app.routes.public_books import router as public_books_router
+from app.routes.user_books import router as user_books_router
 
 app = FastAPI(
     title="BookTrack API",
@@ -26,12 +31,20 @@ app.add_middleware(
 def root():
     return {"message": "API funcionando!"}
 
-# ROTAS
-app.include_router(auth_router, prefix="/auth", tags=["Auth"])
-app.include_router(users_router, prefix="/users", tags=["Users"])
-app.include_router(books_router, prefix="/books", tags=["Books"])
+# ----------------------
+# REGISTRO DAS ROTAS
+# ----------------------
+app.include_router(auth_router,       prefix="/auth",        tags=["Auth"])
+app.include_router(users_router,      prefix="/users",       tags=["Users"])
 
+
+# ⬇️ novas rotas
+app.include_router(public_books_router, prefix="/public-books", tags=["Public Books"])
+app.include_router(user_books_router,   prefix="/user/books",  tags=["User Books"])
+
+# ----------------------
 # OPENAPI PERSONALIZADO
+# ----------------------
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -43,7 +56,7 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    # esquema de segurança
+    # esquema de segurança JWT
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
@@ -52,7 +65,7 @@ def custom_openapi():
         }
     }
 
-    # aplica bearer em tudo exceto /auth
+    # aplica JWT em tudo exceto /auth
     for path, path_item in openapi_schema.get("paths", {}).items():
         if not path.startswith("/auth"):
             for method in path_item.values():
@@ -62,3 +75,4 @@ def custom_openapi():
     return app.openapi_schema
 
 app.openapi = custom_openapi
+
