@@ -39,7 +39,9 @@ class PublicBookCreate(BaseModel):
     description: Optional[str] = None
     cover_url: Optional[str] = None
     published_year: Optional[int] = None
-    total_pages: Optional[int] = None
+
+    # 🔧 CORRIGIDO — Google Books usa "page_count"
+    page_count: Optional[int] = None
 
 
 class PublicBookResponse(PublicBookCreate):
@@ -54,7 +56,7 @@ class PublicBookResponse(PublicBookCreate):
 # =======================================================
 
 class UserBookResponse(BaseModel):
-    id: int        # id da tabela user_books
+    id: int        # id do registro em user_books
     user_id: int
     book_id: int
 
@@ -64,12 +66,16 @@ class UserBookResponse(BaseModel):
 
 class UserBookDetailed(BaseModel):
     user_book_id: int
+    book_id: int
     title: str
     author: Optional[str]
     description: Optional[str]
     cover_url: Optional[str]
     published_year: Optional[int]
-    total_pages: Optional[int]
+
+    # 🔧 CORRIGIDO — o backend retorna "page_count"
+    page_count: Optional[int] = None
+
     status: str = "want"
 
     class Config:
@@ -85,7 +91,7 @@ class ProgressUpdate(BaseModel):
 
 
 # =======================================================
-# REVIEWS (não usado ainda, mas corrigido)
+# REVIEWS (Futuro)
 # =======================================================
 
 class ReviewCreate(BaseModel):
@@ -99,4 +105,3 @@ class ReviewResponse(ReviewCreate):
 
     class Config:
         from_attributes = True
-

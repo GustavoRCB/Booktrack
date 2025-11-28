@@ -1,0 +1,1480 @@
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\export_all_code.py
+================================================================================
+
+import os
+
+# Caminho da raiz do seu projeto
+project_root = r"C:\Users\Dyon\Desktop\backlivros"
+
+# Arquivo final
+output_file = os.path.join(project_root, "codigo_completo_atualizado.txt")
+
+# Extensões incluídas (backend + frontend)
+EXTENSOES = [".py", ".js", ".jsx", ".ts", ".tsx", ".html", ".css"]
+
+with open(output_file, "w", encoding="utf-8") as outfile:
+    for root, dirs, files in os.walk(project_root):
+        # Ignorar venv e node_modules
+        if "venv" in root or "node_modules" in root:
+            continue
+        
+        for file in files:
+            if any(file.endswith(ext) for ext in EXTENSOES):
+                file_path = os.path.join(root, file)
+
+                outfile.write("\n\n" + "="*80 + "\n")
+                outfile.write(f"# ARQUIVO: {file_path}\n")
+                outfile.write("="*80 + "\n\n")
+
+                try:
+                    with open(file_path, "r", encoding="utf-8") as infile:
+                        outfile.write(infile.read())
+                except:
+                    outfile.write("Erro lendo este arquivo.\n")
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\export_codigo.py
+================================================================================
+
+import os
+
+# Caminho raiz do projeto
+project_path = r"C:\Users\Dyon\Desktop\backlivros\backend"
+output_file = r"C:\Users\Dyon\Desktop\backlivros\codigo_atualizado.txt"
+
+with open(output_file, "w", encoding="utf-8") as outfile:
+    for root, dirs, files in os.walk(project_path):
+        for file in files:
+            if file.endswith(".py"):  # ou outras extensões que quiser incluir
+                file_path = os.path.join(root, file)
+                outfile.write(f"\n\n# --- {file_path} ---\n\n")
+                with open(file_path, "r", encoding="utf-8") as infile:
+                    outfile.write(infile.read())
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\test_login.py
+================================================================================
+
+import requests
+
+# URL do seu backend local
+url = "http://127.0.0.1:8000/auth/login"
+
+# Dados do usuário que existe no seu Supabase
+payload = {
+    "email": "maria@email.com",
+    "password": "senha123"
+}
+
+response = requests.post(url, json=payload)
+
+if response.status_code == 200:
+    print("Login bem-sucedido!")
+    print("Token JWT:", response.json()["access_token"])
+else:
+    print("Erro no login:", response.status_code)
+    print(response.json())
+
+# test_login.py (Adição para testar a rota protegida)
+
+# ... CÓDIGO DE LOGIN ANTERIOR ...
+
+response = requests.post(url, json=payload)
+
+if response.status_code == 200:
+    print("Login bem-sucedido!")
+    token = response.json()["access_token"]
+    print("Token JWT:", token)
+
+    # ----------------------------------------
+    # PASSO NOVO: TESTAR UMA ROTA PROTEGIDA
+    # ----------------------------------------
+    protected_url = "http://127.0.0.1:8000/user/books/"
+    
+    # 1. Montar o cabeçalho de autorização
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    # 2. Fazer a requisição GET à rota protegida
+    protected_response = requests.get(protected_url, headers=headers)
+
+    # 3. Verificar o resultado
+    if protected_response.status_code == 200:
+        print("\n✅ Teste de Rota Protegida BEM-SUCEDIDO!")
+        print("Livros do Usuário:", protected_response.json())
+    else:
+        print("\n❌ Teste de Rota Protegida FALHOU:")
+        print("Status Code:", protected_response.status_code)
+        print("Detalhe do Erro:", protected_response.json())
+
+else:
+    print("Erro no login:", response.status_code)
+    print(response.json())
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\auth.py
+================================================================================
+
+#authpy
+from datetime import datetime, timedelta
+from jose import jwt, JWTError
+from passlib.context import CryptContext
+
+# Configurações do JWT
+SECRET_KEY = "ney"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+# Contexto de hash para senhas
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    """
+    Gera o hash de uma senha truncando para 72 bytes (limite do bcrypt)
+    """
+    return pwd_context.hash(password.encode("utf-8")[:72])
+
+def verify_password(plain: str, hashed: str) -> bool:
+    """
+    Verifica se a senha fornecida corresponde ao hash
+    """
+    return pwd_context.verify(plain.encode("utf-8")[:72], hashed)
+
+def create_access_token(data: dict) -> str:
+    """
+    Cria um token JWT com tempo de expiração
+    """
+    payload = data.copy()
+    payload["exp"] = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_token(token: str) -> dict | None:
+    """
+    Verifica e decodifica um token JWT
+    """
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        return None
+
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\dependencies.py
+================================================================================
+
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer
+from jose import jwt, JWTError
+
+security = HTTPBearer()
+
+SECRET_KEY = "ney"
+ALGORITHM = "HS256"
+
+def get_current_user(credentials=Depends(security)):
+    token = credentials.credentials
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=403, detail="Invalid token")
+
+    return payload
+
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\main.py
+================================================================================
+
+# app/main.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
+
+# ROTAS EXISTENTES
+from app.routes.users import router as users_router
+from app.routes.auth_routes import router as auth_router
+
+# NOVAS ROTAS
+from app.routes.public_books import router as public_books_router
+from app.routes.user_books import router as user_books_router
+
+app = FastAPI(
+    title="BookTrack API",
+    description="API para gerenciar usuários, livros, avaliações e progresso de leitura.",
+    version="1.0.0"
+)
+
+# -------------------------
+# 🌐 CORS
+# -------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# -------------------------
+# 🌍 ROTA RAIZ
+# -------------------------
+@app.get("/")
+def root():
+    return {"message": "API funcionando!"}
+
+# -------------------------
+# 📌 REGISTRO DAS ROTAS
+# -------------------------
+app.include_router(auth_router,  prefix="/auth",  tags=["Auth"])
+app.include_router(users_router, prefix="/users", tags=["Users"])
+
+# Rotas públicas (catálogo)
+app.include_router(public_books_router, prefix="/public-books", tags=["Public Books"])
+
+# Rotas da biblioteca do usuário
+# ⚠️ IMPORTANTE: sem prefixo aqui!
+app.include_router(user_books_router, tags=["User Books"])
+
+# -------------------------
+# 📘 OPENAPI PERSONALIZADO (Swagger com JWT)
+# -------------------------
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    # 🔐 Configuração de segurança JWT
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT"
+        }
+    }
+
+    # Aplica JWT automaticamente em tudo exceto rota /auth
+    for path, path_item in openapi_schema.get("paths", {}).items():
+        if not path.startswith("/auth"):
+            for method in path_item.values():
+                method.setdefault("security", [{"BearerAuth": []}])
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\models.py
+================================================================================
+
+# Simulação de banco de dados
+users_db = []
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\schemas.py
+================================================================================
+
+# app/schemas.py
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+
+# =======================================================
+# USERS
+# =======================================================
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    bio: Optional[str] = None
+
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    bio: Optional[str] = None
+
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    bio: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+# =======================================================
+# PUBLIC BOOKS (Catálogo Global)
+# =======================================================
+
+class PublicBookCreate(BaseModel):
+    title: str
+    author: Optional[str] = None
+    description: Optional[str] = None
+    cover_url: Optional[str] = None
+    published_year: Optional[int] = None
+    total_pages: Optional[int] = None
+
+
+class PublicBookResponse(PublicBookCreate):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+# =======================================================
+# USER BOOKS (Biblioteca do Usuário)
+# =======================================================
+
+class UserBookResponse(BaseModel):
+    id: int        # id da tabela user_books
+    user_id: int
+    book_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class UserBookDetailed(BaseModel):
+    user_book_id: int
+    title: str
+    author: Optional[str]
+    description: Optional[str]
+    cover_url: Optional[str]
+    published_year: Optional[int]
+    total_pages: Optional[int]
+    status: str = "want"
+
+    class Config:
+        from_attributes = True
+
+
+# =======================================================
+# PROGRESSO DE LEITURA
+# =======================================================
+
+class ProgressUpdate(BaseModel):
+    status: str  # want | reading | read
+
+
+# =======================================================
+# REVIEWS (não usado ainda, mas corrigido)
+# =======================================================
+
+class ReviewCreate(BaseModel):
+    rating: int
+    comment: Optional[str] = None
+
+
+class ReviewResponse(ReviewCreate):
+    id: int
+    user_book_id: int
+
+    class Config:
+        from_attributes = True
+
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\__init__.py
+================================================================================
+
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\database\supabase_client.py
+================================================================================
+
+# app/database/supabase_client.py
+from supabase import create_client, Client
+from dotenv import load_dotenv
+import os
+import logging
+
+# Configuração de logging
+logger = logging.getLogger(__name__)
+
+# Carregar variáveis do arquivo .env
+# load_dotenv() deve ser chamada na raiz do projeto (app/main.py) ou aqui
+# Se estiver tendo problemas de carregamento, chame explicitamente:
+load_dotenv() 
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase: Client | None = None
+
+# Tratamento de erro para inicialização do cliente Supabase
+try:
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        # Se as chaves estiverem faltando, levanta um erro, mas o logger captura
+        raise ValueError("❌ SUPABASE_URL ou SUPABASE_KEY não configurados no arquivo .env")
+        
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    logger.info("✅ Cliente Supabase inicializado com sucesso.")
+
+except ValueError as e:
+    # Captura o erro, loga e permite que o servidor inicie com 'supabase' como None
+    logger.error(f"🚨 ERRO CRÍTICO NA CONEXÃO SUPABASE: {e}")
+    logger.warning("Servidor Uvicorn iniciando, mas sem conexão funcional com o banco de dados Supabase.")
+    logger.warning("Verifique o arquivo .env e certifique-se de que SUPABASE_URL e SUPABASE_KEY estão corretos.")
+
+# Opcional: Se quiser que o servidor trave para forçar a correção do .env, use o código abaixo:
+# if not SUPABASE_URL or not SUPABASE_KEY:
+#     raise ValueError("❌ SUPABASE_URL ou SUPABASE_KEY não configurados no arquivo .env")
+# supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\database\__init__.py
+================================================================================
+
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\routes\auth_routes.py
+================================================================================
+
+#authroutespy
+from fastapi import APIRouter, HTTPException, Body
+from app.database.supabase_client import supabase
+from app.auth import verify_password, create_access_token
+
+router = APIRouter()
+
+
+@router.post("/login")
+def login(user: dict = Body(...)):
+    print("🔥 ROTA LOGIN FOI CHAMADA")
+    print("📩 Dados recebidos:", user)
+
+    email = user.get("email")
+    password = user.get("password")
+
+    try:
+        result = supabase.table("users").select("*").eq("email", email).execute()
+        print("📌 RESULTADO SUPABASE:", result)
+
+        if not result.data:
+            print("❌ Usuario não encontrado")
+            return {"error": "usuario nao encontrado"}
+
+        user_db = result.data[0]
+        print("👤 Usuario encontrado:", user_db)
+
+        if "password_hash" not in user_db:
+            print("❌ Campo password_hash não existe")
+            return {"error": "campo password_hash faltando"}
+
+        print("🔐 Verificando senha...")
+        valid = verify_password(password, user_db["password_hash"])
+        print("🔑 Resultado da senha:", valid)
+
+        if not valid:
+            print("❌ Senha incorreta")
+            return {"error": "senha incorreta"}
+
+        token = create_access_token({"user_id": user_db["id"], "email": user_db["email"]})
+        print("✅ TOKEN CRIADO:", token)
+
+        return {"access_token": token, "token_type": "bearer"}
+
+    except Exception as e:
+        print("💥 ERRO GERAL:", e)
+        raise
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\routes\public_books.py
+================================================================================
+
+from fastapi import APIRouter, HTTPException
+from app.database.supabase_client import supabase
+from app.schemas import PublicBookCreate, PublicBookResponse
+
+router = APIRouter()  # <-- ESTA LINHA É OBRIGATÓRIA
+
+# ----------------------------------------
+# LISTAR TODOS OS LIVROS DO CATÁLOGO PÚBLICO
+# ----------------------------------------
+@router.get("/", response_model=list[PublicBookResponse])
+def list_public_books():
+    result = supabase.table("public_books").select("*").execute()
+    return result.data
+
+
+# ----------------------------------------
+# OBTER UM LIVRO ESPECÍFICO
+# ----------------------------------------
+@router.get("/{book_id}", response_model=PublicBookResponse)
+def get_public_book(book_id: int):
+    result = supabase.table("public_books").select("*").eq("id", book_id).single().execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Livro não encontrado")
+    return result.data
+
+
+# ----------------------------------------
+# CRIAR LIVRO NO CATÁLOGO PÚBLICO
+# ----------------------------------------
+@router.post("/", response_model=PublicBookResponse)
+def create_public_book(book: PublicBookCreate):
+    result = supabase.table("public_books").insert(book.dict()).execute()
+    if not result.data:
+        raise HTTPException(status_code=400, detail="Erro ao inserir livro")
+    return result.data[0]
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\routes\users.py
+================================================================================
+
+#use py
+from fastapi import APIRouter, Depends, HTTPException
+from starlette import status  # Importação de status para estabilidade
+from app.database.supabase_client import supabase
+from app.schemas import UserCreate, UserUpdate
+from app.auth import hash_password
+from app.dependencies import get_current_user
+
+import logging
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+# Rota GET /users (REQUER AUTENTICAÇÃO por segurança)
+@router.get("/")
+def get_users():
+    """Retorna a lista de todos os usuários (requer autenticação)."""
+    try:
+        # Nota: RLS (Row Level Security) no Supabase pode filtrar a lista aqui.
+        result = supabase.table("users").select("*").execute()
+        return result.data
+    except Exception as e:
+        logger.error(f"Erro ao buscar usuários no banco de dados: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                            detail=f"Erro ao buscar usuários no banco de dados: {str(e)}")
+
+
+# Rota POST /users (Rota de Registro)
+@router.post("/")
+def create_user(user: UserCreate):
+    """Cria um novo usuário (Rota de Registro). Inclui tratamento de erro robusto."""
+    data = user.dict()
+    # 1. Faz o hash da senha
+    data["password_hash"] = hash_password(data.pop("password"))
+    
+    try:
+        # 2. Tenta inserir no Supabase
+        result = supabase.table("users").insert(data).execute()
+        
+        # 3. Verifica se a inserção retornou dados
+        if not result.data:
+            logger.error("Falha silenciosa na inserção do Supabase: dados vazios.")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                                detail="Falha na inserção do usuário, tente novamente.")
+            
+        return result.data
+
+    except Exception as e:
+        error_message = str(e)
+        logger.error(f"Erro ao criar usuário: {error_message}")
+        
+        # 4. Trata o erro de campo nulo (ex: se o campo 'name' estiver faltando no Supabase)
+        if "violates not-null constraint" in error_message or "23502" in error_message:
+             # O .split('\"')[1] tenta extrair o nome da coluna que falhou
+             column_name = error_message.split('\"')[1] if len(error_message.split('\"')) > 1 else "coluna desconhecida"
+             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                                 detail=f"Campo obrigatório faltando ou nulo no banco: '{column_name}'. Verifique o schema e o payload.")
+
+        # 5. Trata o erro de e-mail duplicado (unique constraint)
+        if "duplicate key value violates unique constraint" in error_message or "23505" in error_message:
+             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                                 detail="Este e-mail já está em uso.")
+
+        # 6. Trata outros erros de banco/conexão
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                            detail=f"Erro interno do servidor ao criar usuário: {error_message}")
+
+
+@router.put("/{user_id}")
+def update_user(user_id: int, user: UserUpdate, current_user: dict = Depends(get_current_user)):
+    """Atualiza o perfil de um usuário (requer autenticação e autorização para o próprio perfil)."""
+    
+    # 1. Autorização: Verifica se o ID do token é o mesmo ID da rota
+    if user_id != current_user.get("user_id"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="Você só pode atualizar seu próprio perfil.")
+
+    # 2. Prepara os dados de atualização (remove campos None)
+    data = {k: v for k, v in user.dict().items() if v is not None}
+    
+    # 3. Faz o hash da nova senha, se fornecida
+    if "password" in data:
+        data["password_hash"] = hash_password(data.pop("password"))
+        
+    # 4. Executa a atualização no Supabase
+    result = supabase.table("users").update(data).eq("id", user_id).execute()
+    
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail="Usuário não encontrado ou erro na atualização.")
+        
+    return result.data
+
+
+@router.delete("/{user_id}")
+def delete_user(user_id: int, current_user: dict = Depends(get_current_user)):
+    """Deleta o perfil de um usuário (requer autenticação e autorização para o próprio perfil)."""
+    
+    # 1. Autorização: Verifica se o ID do token é o mesmo ID da rota
+    if user_id != current_user.get("user_id"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="Você só pode deletar seu próprio perfil.")
+
+    # 2. Executa a deleção
+    result = supabase.table("users").delete().eq("id", user_id).execute()
+    
+    if not result.data:
+        # Esta verificação é conservadora, assumindo que se a exclusão falhou, o usuário não foi encontrado.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail="Usuário não encontrado ou já foi excluído.")
+    
+    return {"message": f"Usuário com ID {user_id} deletado com sucesso."}
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\routes\user_books.py
+================================================================================
+
+# usersbook.py
+from fastapi import APIRouter, HTTPException, Depends
+from app.database.supabase_client import supabase
+from app.schemas import UserBookResponse, UserBookDetailed, ProgressUpdate
+from app.dependencies import get_current_user
+
+router = APIRouter(prefix="/users/books", tags=["User Books"])
+
+
+# ============================================================
+# 1. LISTAR TODOS OS LIVROS DO USUÁRIO
+# ============================================================
+@router.get("", response_model=list[UserBookDetailed])
+def list_user_books(user=Depends(get_current_user)):
+    user_id = user["user_id"]
+
+    # Consulta todos os registros user_books do usuário
+    user_books = (
+        supabase.table("user_books")
+        .select("*")
+        .eq("user_id", user_id)
+        .execute()
+        .data
+    )
+
+    detailed_list = []
+
+    for item in user_books:
+        book_id = item["book_id"]
+
+        # Busca dados completos do livro
+        book = (
+            supabase.table("public_books")
+            .select("*")
+            .eq("id", book_id)
+            .maybe_single()
+            .execute()
+            .data
+        )
+
+        if not book:
+            continue
+
+        # Busca status de progresso
+        progress = (
+            supabase.table("progress")
+            .select("*")
+            .eq("user_book_id", item["id"])
+            .execute()
+            .data
+        )
+
+        status = progress[0]["status"] if progress else "want"
+
+        detailed_list.append({
+            "user_book_id": item["id"],
+            "title": book["title"],
+            "author": book.get("author"),
+            "description": book.get("description"),
+            "cover_url": book.get("cover_url"),
+            "published_year": book.get("published_year"),
+            "total_pages": book.get("total_pages"),
+            "status": status
+        })
+
+    return detailed_list
+
+
+# ============================================================
+# 2. ADICIONAR LIVRO À BIBLIOTECA DO USUÁRIO
+# ============================================================
+@router.post("/add/{book_id}", response_model=UserBookResponse)
+def add_book(book_id: int, user=Depends(get_current_user)):
+    user_id = user["user_id"]
+
+    # Verifica se o livro já está na biblioteca
+    exists = (
+        supabase.table("user_books")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("book_id", book_id)
+        .execute()
+        .data
+    )
+
+    if exists:
+        raise HTTPException(status_code=400, detail="Livro já está na biblioteca")
+
+    # Insere o registro user_books
+    insert_result = (
+        supabase.table("user_books")
+        .insert({"user_id": user_id, "book_id": book_id})
+        .execute()
+    )
+
+    user_book_id = insert_result.data[0]["id"]
+
+    # Cria registro de progresso
+    supabase.table("progress").insert({
+        "user_book_id": user_book_id,
+        "status": "want"
+    }).execute()
+
+    return insert_result.data[0]
+
+
+# ============================================================
+# 3. REMOVER LIVRO DA BIBLIOTECA
+# ============================================================
+@router.delete("/remove/{user_book_id}")
+def remove_book(user_book_id: int, user=Depends(get_current_user)):
+    user_id = user["user_id"]
+
+    # Verifica se o livro existe
+    record = (
+        supabase.table("user_books")
+        .select("*")
+        .eq("id", user_book_id)
+        .eq("user_id", user_id)
+        .maybe_single()
+        .execute()
+        .data
+    )
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Livro não encontrado")
+
+    # Remove
+    supabase.table("user_books").delete().eq("id", user_book_id).execute()
+
+    return {"message": "Livro removido com sucesso"}
+
+
+# ============================================================
+# 4. ATUALIZAR STATUS DE LEITURA (progress)
+# ============================================================
+@router.put("/{user_book_id}/progress")
+def update_progress(user_book_id: int, update: ProgressUpdate, user=Depends(get_current_user)):
+    user_id = user["user_id"]
+
+    # Valida existência
+    user_book = (
+        supabase.table("user_books")
+        .select("*")
+        .eq("id", user_book_id)
+        .eq("user_id", user_id)
+        .maybe_single()
+        .execute()
+    )
+
+    if not user_book or not user_book.data:
+        raise HTTPException(status_code=404, detail="Livro não está na biblioteca")
+
+    # Verifica se já existe progresso
+    progress = (
+        supabase.table("progress")
+        .select("*")
+        .eq("user_book_id", user_book_id)
+        .maybe_single()
+        .execute()
+    )
+
+    # Atualiza ou cria progresso
+    if progress and progress.data:
+        supabase.table("progress").update({"status": update.status}).eq("user_book_id", user_book_id).execute()
+    else:
+        supabase.table("progress").insert({
+            "user_book_id": user_book_id,
+            "status": update.status
+        }).execute()
+
+    return {"message": "Status atualizado com sucesso"}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\backend\app\routes\__init__.py
+================================================================================
+
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\eslint.config.js
+================================================================================
+
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+])
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\index.html
+================================================================================
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>frontend</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\tailwind.config.js
+================================================================================
+
+module.exports = {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,jsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\vite.config.js
+================================================================================
+
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\App.css
+================================================================================
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\App.jsx
+================================================================================
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+// Componentes
+import Navbar from "./components/Navbar";
+
+// Páginas
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Library from "./pages/Library";
+import Home from "./pages/Home";
+import BookPage from "./pages/BookPage";
+import Explore from "./pages/Explore";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Navbar />
+
+      <Routes>
+        {/* Acesso público */}
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Páginas do usuário */}
+        <Route path="/home" element={<Home />} />
+        <Route path="/library" element={<Library />} />
+        <Route path="/explore" element={<Explore />} />
+
+        {/* Página individual do livro */}
+        <Route path="/book/:id" element={<BookPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\index.css
+================================================================================
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\main.jsx
+================================================================================
+
+
+
+
+
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\components\Books.jsx
+================================================================================
+
+import { useEffect, useState } from "react";
+
+export default function Books() {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/books") // chama a API do backend
+      .then(res => res.json())
+      .then(data => {
+        setBooks(data); // salva os livros no estado
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []); // [] garante que rode apenas 1 vez ao montar o componente
+
+  if (loading) return <p>Carregando livros...</p>;
+
+  return (
+    <div>
+      <h2>📚 Livros</h2>
+      {books.length === 0 && <p>Nenhum livro cadastrado.</p>}
+      <ul>
+        {books.map(book => (
+          <li key={book.id}>
+            <strong>{book.title}</strong> - {book.author} ({book.total_pages} páginas)
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\components\Navbar.jsx
+================================================================================
+
+import { Link, useNavigate } from "react-router-dom";
+
+export default function Navbar() {
+  const navigate = useNavigate();
+
+  function logout() {
+    localStorage.removeItem("token");
+    navigate("/");
+  }
+
+  return (
+    <nav className="bg-gray-800 text-white px-6 py-4 flex items-center justify-between shadow-lg">
+      <Link to="/home" className="text-2xl font-bold">
+        BookTrack
+      </Link>
+
+      <div className="flex gap-6">
+        <Link to="/home" className="hover:text-blue-400 duration-150">Home</Link>
+        <Link to="/library" className="hover:text-blue-400 duration-150">Biblioteca</Link>
+        <Link to="/explore" className="hover:text-blue-400 duration-150">Explorar</Link>
+
+        <button
+          onClick={logout}
+          className="bg-red-600 px-3 py-1 rounded hover:bg-red-700 duration-150"
+        >
+          Sair
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\pages\BookPage.jsx
+================================================================================
+
+import { useParams } from "react-router-dom";
+
+export default function BookPage() {
+  const { id } = useParams(); // ID do livro vindo da URL
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-10">
+      <h1 className="text-3xl font-bold mb-4">📖 Detalhes do Livro</h1>
+
+      <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
+        <p className="mb-4">ID do livro: {id}</p>
+
+        <p className="text-gray-400 mb-6">
+          Aqui você poderá exibir descrição, autor, ano, capa, progresso etc.
+        </p>
+
+        <a
+          href="/library"
+          className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Voltar à Biblioteca
+        </a>
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\pages\Explore.jsx
+================================================================================
+
+import { useState } from "react";
+
+export default function Explore() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-8">
+      <h1 className="text-3xl font-bold mb-6">🔍 Explorar Livros</h1>
+
+      <div className="flex gap-2 mb-6">
+        <input
+          className="p-2 bg-gray-700 rounded w-full"
+          placeholder="Buscar livros..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button className="bg-blue-600 px-4 rounded">Buscar</button>
+      </div>
+
+      <p className="text-gray-400">
+        Página de exploração criada com sucesso. Agora você pode integrar a API do Google Books.
+      </p>
+    </div>
+  );
+}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\pages\Home.jsx
+================================================================================
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-10">
+      <h1 className="text-4xl font-bold mb-6">📚 Bem-vindo ao BookTrack!</h1>
+      <p className="text-gray-300 mb-10 text-lg">
+        Acompanhe seu progresso, explore novos livros e organize sua leitura.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        
+        <a
+          href="/library"
+          className="p-6 bg-gray-800 rounded-xl hover:bg-gray-700 transition duration-200 shadow"
+        >
+          <h2 className="text-2xl font-semibold mb-2">📘 Minha Biblioteca</h2>
+          <p>Veja e gerencie seus livros salvos.</p>
+        </a>
+
+        <a
+          href="/explore"
+          className="p-6 bg-gray-800 rounded-xl hover:bg-gray-700 transition duration-200 shadow"
+        >
+          <h2 className="text-2xl font-semibold mb-2">🔍 Explorar Livros</h2>
+          <p>Encontre novos livros usando a Google Books API.</p>
+        </a>
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\pages\Library.jsx
+================================================================================
+
+import { useEffect, useState } from "react";
+import api, { setAuthToken } from "../services/api";
+import { useNavigate, Link } from "react-router-dom";
+import { Trash, BookOpen } from "lucide-react";
+
+export default function Library() {
+  const [books, setBooks] = useState([]);
+  const navigate = useNavigate();
+
+  console.log("📘 Renderizando o Library.jsx EDITADO!");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return navigate("/");
+
+    setAuthToken(token);
+
+    api.get("/users/books")
+      .then((res) => setBooks(res.data))
+      .catch(() => navigate("/"));
+  }, []);
+
+  async function deleteBook(userBookId) {
+    try {
+      await api.delete(`/users/books/remove/${userBookId}`);
+      setBooks(books.filter((b) => b.user_book_id !== userBookId));
+    } catch {
+      alert("Erro ao remover livro");
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-8">
+
+      {/* 🔥 QUADRADO VERMELHO */}
+      <div className="w-32 h-32 bg-red-500 mb-6"></div>
+
+      <h1 className="text-4xl font-bold mb-10 text-center">
+        📚 Minha Biblioteca
+      </h1>
+
+      {books.length === 0 ? (
+        <p className="text-center text-gray-400 text-lg">
+          Sua biblioteca está vazia. Adicione livros na página Explorar.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {books.map((book) => (
+            <div
+              key={book.user_book_id}
+              className="bg-gray-800 p-5 rounded-2xl shadow-xl hover:shadow-2xl transition-all border border-gray-700"
+            >
+
+              {/* Capa */}
+              <Link to={`/book/${book.user_book_id}`}>
+                <div className="w-full aspect-[3/4] mb-4">
+                  <img
+                    src={book.cover_url || "/default-cover.png"}
+                    alt={book.title}
+                    className="w-full h-full object-cover rounded-xl hover:opacity-80 transition"
+                  />
+                </div>
+              </Link>
+
+              <h2 className="text-xl font-semibold mb-2 line-clamp-2">
+                {book.title}
+              </h2>
+
+              <p className="text-gray-400 text-sm mb-1">
+                ✍ {book.author || "Autor desconhecido"}
+              </p>
+
+              <div className="flex items-center justify-between mt-6">
+                <Link
+                  to={`/book/${book.user_book_id}`}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg transition text-sm"
+                >
+                  <BookOpen size={18} />
+                  Ver mais
+                </Link>
+
+                <button
+                  className="bg-red-600 hover:bg-red-700 p-2 rounded-lg transition"
+                  onClick={() => deleteBook(book.user_book_id)}
+                >
+                  <Trash size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\pages\Login.jsx
+================================================================================
+
+import { useState } from "react";
+import api, { setAuthToken } from "../services/api";
+import { useNavigate } from "react-router-dom";
+
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  async function handleLogin(e) {
+    e.preventDefault();
+
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      const token = res.data.access_token;
+
+      localStorage.setItem("token", token);
+      setAuthToken(token);
+
+      navigate("/library");
+    } catch (err) {
+      alert("Email ou senha inválidos");
+    }
+  }
+
+  return (
+    <div className="h-screen flex items-center justify-center bg-gray-900">
+      <form
+        onSubmit={handleLogin}
+        className="bg-gray-800 p-8 rounded-xl shadow-lg w-80"
+      >
+        <h1 className="text-white text-2xl mb-6 font-bold">Login</h1>
+
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Senha"
+          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button className="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded text-white font-bold">
+          Entrar
+        </button>
+
+        <p
+          className="text-blue-400 mt-3 cursor-pointer"
+          onClick={() => navigate("/register")}
+        >
+          Criar conta
+        </p>
+      </form>
+    </div>
+  );
+}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\pages\Register.jsx
+================================================================================
+
+import { useState } from "react";
+import api from "../services/api";
+import { useNavigate } from "react-router-dom";
+
+export default function Register() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  async function handleRegister(e) {
+    e.preventDefault();
+
+    try {
+      await api.post("/users/", { email, password });
+      alert("Conta criada com sucesso!");
+      navigate("/");
+    } catch (err) {
+      alert("Erro ao criar conta");
+    }
+  }
+
+  return (
+    <div className="h-screen flex items-center justify-center bg-gray-900">
+      <form
+        onSubmit={handleRegister}
+        className="bg-gray-800 p-8 rounded-xl shadow-lg w-80"
+      >
+        <h1 className="text-white text-2xl mb-6 font-bold">Criar Conta</h1>
+
+        <input
+          type="email"
+          placeholder="Email"
+          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Senha"
+          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button className="w-full bg-green-600 hover:bg-green-700 p-2 rounded text-white font-bold">
+          Registrar
+        </button>
+
+        <p
+          className="text-blue-400 mt-3 cursor-pointer"
+          onClick={() => navigate("/")}
+        >
+          Já tenho conta
+        </p>
+      </form>
+    </div>
+  );
+}
+
+
+================================================================================
+# ARQUIVO: C:\Users\Dyon\Desktop\backlivros\frontend\src\services\api.js
+================================================================================
+
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: "http://localhost:8000",
+});
+
+export const setAuthToken = (token) => {
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common["Authorization"];
+  }
+};
+
+export default api;
+

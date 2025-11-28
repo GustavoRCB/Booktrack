@@ -5,12 +5,14 @@ from fastapi.openapi.utils import get_openapi
 
 # ROTAS EXISTENTES
 from app.routes.users import router as users_router
-
 from app.routes.auth_routes import router as auth_router
 
-# ⬇️ NOVAS ROTAS
+# NOVAS ROTAS
 from app.routes.public_books import router as public_books_router
 from app.routes.user_books import router as user_books_router
+
+# ROTA GOOGLE BOOKS
+from app.routes.external_books import router as external_books_router
 
 app = FastAPI(
     title="BookTrack API",
@@ -18,7 +20,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS
+# -------------------------
+# 🌐 CORS
+# -------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -27,24 +31,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -------------------------
+# 🌍 ROTA RAIZ
+# -------------------------
 @app.get("/")
 def root():
     return {"message": "API funcionando!"}
 
-# ----------------------
-# REGISTRO DAS ROTAS
-# ----------------------
-app.include_router(auth_router,       prefix="/auth",        tags=["Auth"])
-app.include_router(users_router,      prefix="/users",       tags=["Users"])
+# -------------------------
+# 📌 REGISTRO DAS ROTAS
+# -------------------------
+app.include_router(auth_router,  prefix="/auth",  tags=["Auth"])
+app.include_router(users_router, prefix="/users", tags=["Users"])
 
-
-# ⬇️ novas rotas
+# Rotas públicas (catálogo)
 app.include_router(public_books_router, prefix="/public-books", tags=["Public Books"])
-app.include_router(user_books_router,   prefix="/user/books",  tags=["User Books"])
 
-# ----------------------
-# OPENAPI PERSONALIZADO
-# ----------------------
+# Biblioteca do usuário
+app.include_router(user_books_router, tags=["User Books"])
+
+# Google Books – SEM PREFIXO (já existe no router)
+app.include_router(external_books_router)
+
+# -------------------------
+# 📘 OPENAPI PERSONALIZADO
+# -------------------------
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -56,7 +67,6 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    # esquema de segurança JWT
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
@@ -65,7 +75,6 @@ def custom_openapi():
         }
     }
 
-    # aplica JWT em tudo exceto /auth
     for path, path_item in openapi_schema.get("paths", {}).items():
         if not path.startswith("/auth"):
             for method in path_item.values():
@@ -74,5 +83,5 @@ def custom_openapi():
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
-app.openapi = custom_openapi
 
+app.openapi = custom_openapi

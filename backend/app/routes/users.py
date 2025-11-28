@@ -1,3 +1,4 @@
+#use py
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status  # Importação de status para estabilidade
 from app.database.supabase_client import supabase
