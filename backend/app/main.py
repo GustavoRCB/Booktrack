@@ -3,26 +3,30 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-# ROTAS EXISTENTES
+# ===== IMPORTS DOS ROUTERS =====
 from app.routes.users import router as users_router
 from app.routes.auth_routes import router as auth_router
-
-# NOVAS ROTAS
 from app.routes.public_books import router as public_books_router
 from app.routes.user_books import router as user_books_router
-
-# ROTA GOOGLE BOOKS
 from app.routes.external_books import router as external_books_router
+from app.routes.profile import router as profile_router
+from app.routes.reviews import router as reviews_router
+from app.routes.avatar import router as avatar_router
+from app.routes.favorites import router as favorites_router
 
+
+# ================================
+# 🚀 INICIALIZAÇÃO DO FASTAPI
+# ================================
 app = FastAPI(
     title="BookTrack API",
     description="API para gerenciar usuários, livros, avaliações e progresso de leitura.",
     version="1.0.0"
 )
 
-# -------------------------
+# ================================
 # 🌐 CORS
-# -------------------------
+# ================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,31 +35,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -------------------------
+# ================================
 # 🌍 ROTA RAIZ
-# -------------------------
+# ================================
 @app.get("/")
 def root():
     return {"message": "API funcionando!"}
 
-# -------------------------
+
+# ================================
 # 📌 REGISTRO DAS ROTAS
-# -------------------------
-app.include_router(auth_router,  prefix="/auth",  tags=["Auth"])
+# ================================
+app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(users_router, prefix="/users", tags=["Users"])
 
-# Rotas públicas (catálogo)
+# Catálogo de livros públicos
 app.include_router(public_books_router, prefix="/public-books", tags=["Public Books"])
 
-# Biblioteca do usuário
+# Biblioteca pessoal
 app.include_router(user_books_router, tags=["User Books"])
 
-# Google Books – SEM PREFIXO (já existe no router)
+# Google Books API (já possui o prefixo interno próprio)
 app.include_router(external_books_router)
 
-# -------------------------
-# 📘 OPENAPI PERSONALIZADO
-# -------------------------
+# Perfil do usuário
+app.include_router(profile_router, prefix="/profile", tags=["Profile"])
+
+# Reviews e Avaliações
+app.include_router(reviews_router, prefix="/reviews", tags=["Reviews"])
+
+# Upload de Avatar
+app.include_router(avatar_router, prefix="/profile", tags=["Avatar"])
+
+# Lista manual de Favoritos
+app.include_router(favorites_router, prefix="/profile", tags=["Favorites"])
+
+
+# ================================
+# 📘 OPENAPI PERSONALIZADO (JWT)
+# ================================
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -67,6 +85,7 @@ def custom_openapi():
         routes=app.routes,
     )
 
+    # JWT security
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
@@ -75,6 +94,7 @@ def custom_openapi():
         }
     }
 
+    # Aplica JWT automaticamente em todas as rotas (exceto /auth)
     for path, path_item in openapi_schema.get("paths", {}).items():
         if not path.startswith("/auth"):
             for method in path_item.values():

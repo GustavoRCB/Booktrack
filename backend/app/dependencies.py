@@ -7,7 +7,11 @@ security = HTTPBearer()
 SECRET_KEY = "ney"
 ALGORITHM = "HS256"
 
+
 def get_current_user(credentials=Depends(security)):
+    """
+    Lê o token enviado pelo cliente e decodifica o payload JWT.
+    """
     token = credentials.credentials
 
     try:
@@ -16,4 +20,3 @@ def get_current_user(credentials=Depends(security)):
         raise HTTPException(status_code=403, detail="Invalid token")
 
     return payload
-

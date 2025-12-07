@@ -1,6 +1,6 @@
 import { useState } from "react";
-import api, { setAuthToken } from "../services/api";
 import { useNavigate } from "react-router-dom";
+import api from "../services/api";  // <<< FALTAVA ISSO!
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -11,46 +11,100 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await api.post("/auth/login", { email, password });
-      const token = res.data.access_token;
+      const res = await api.post("/auth/login", {
+        email,
+        password,
+      });
 
+      // --- Garantir que o token existe ---
+      const token = res.data?.access_token;
+
+      if (!token) {
+        alert("Erro: servidor não retornou token");
+        return;
+      }
+
+      // Salvar token
       localStorage.setItem("token", token);
-      setAuthToken(token);
 
+      // Redirecionar
       navigate("/library");
     } catch (err) {
+      console.error("Erro no login:", err);
       alert("Email ou senha inválidos");
     }
   }
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-900">
+    <div className="h-screen flex items-center justify-center bg-brand-cream">
       <form
         onSubmit={handleLogin}
-        className="bg-gray-800 p-8 rounded-xl shadow-lg w-80"
+        className="
+          bg-brand-sand 
+          p-8 rounded-2xl 
+          shadow-md border border-brand-taupe 
+          w-80
+        "
       >
-        <h1 className="text-white text-2xl mb-6 font-bold">Login</h1>
+        <h1 className="text-brand-purple text-3xl mb-6 font-bold text-center">
+          Login
+        </h1>
 
+        {/* Email */}
         <input
           type="email"
           placeholder="Email"
-          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+          className="
+            w-full p-3 mb-4 
+            rounded-xl 
+            bg-brand-cream 
+            border border-brand-taupe 
+            text-brand-text 
+            placeholder-brand-softtext
+            focus:outline-none focus:ring-2 focus:ring-brand-royal
+          "
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
 
+        {/* Senha */}
         <input
           type="password"
           placeholder="Senha"
-          className="w-full p-2 mb-3 rounded bg-gray-700 text-white"
+          className="
+            w-full p-3 mb-4 
+            rounded-xl 
+            bg-brand-cream 
+            border border-brand-taupe 
+            text-brand-text 
+            placeholder-brand-softtext
+            focus:outline-none focus:ring-2 focus:ring-brand-royal
+          "
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
 
-        <button className="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded text-white font-bold">
+        {/* Botão */}
+        <button
+          className="
+            w-full 
+            bg-brand-purple 
+            text-brand-cream 
+            hover:bg-brand-royal
+            p-3 rounded-xl font-semibold 
+            transition
+          "
+        >
           Entrar
         </button>
 
+        {/* Criar conta */}
         <p
-          className="text-blue-400 mt-3 cursor-pointer"
+          className="
+            text-brand-purple mt-4 text-center 
+            cursor-pointer hover:text-brand-royal 
+            transition font-medium
+          "
           onClick={() => navigate("/register")}
         >
           Criar conta

@@ -8,9 +8,7 @@ export default function Home() {
 
   const classicIds = [39, 40, 41, 42, 43, 44, 48, 9, 16, 10];
 
-  // =============================
-  // 1. Buscar livros mais populares
-  // =============================
+  // Livros populares
   useEffect(() => {
     async function loadPopular() {
       try {
@@ -24,9 +22,7 @@ export default function Home() {
     loadPopular();
   }, []);
 
-  // =============================
-  // 2. Buscar clássicos pelo ID
-  // =============================
+  // Clássicos
   useEffect(() => {
     async function loadClassics() {
       try {
@@ -36,12 +32,10 @@ export default function Home() {
               const res = await api.get(`/public-books/${id}`);
               return res.data;
             } catch {
-              console.warn(`Livro clássico ${id} não encontrado.`);
               return null;
             }
           })
         );
-
         setClassicBooks(results.filter((b) => b !== null));
       } catch (err) {
         console.error("Erro ao carregar clássicos:", err);
@@ -53,64 +47,82 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-10">
+    <div className="min-h-screen bg-brand-cream text-brand-text p-10">
 
-      {/* ============================
-         Título principal
-      ============================= */}
-      <h1 className="text-4xl font-bold mb-6">📚 Bem-vindo ao BookTrack!</h1>
-      <p className="text-gray-300 mb-10 text-lg">
-        Acompanhe seu progresso, explore novos livros e organize sua leitura.
+      {/* Título */}
+      <h1 className="text-4xl font-bold mb-4 text-brand-purple">
+        📚 Bem-vindo ao Litto!
+      </h1>
+
+      <p className="text-brand-softtext mb-10 text-lg">
+        Acompanhe sua leitura, descubra novos livros e mergulhe em histórias incríveis.
       </p>
 
-      {/* ============================
-         Ações principais
-      ============================= */}
+      {/* Ações principais */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-12">
-
+        
         <Link
           to="/library"
-          className="p-6 bg-gray-800 rounded-xl hover:bg-gray-700 transition duration-200 shadow"
+          className="
+            p-6 rounded-xl 
+            bg-brand-sand 
+            border border-brand-taupe 
+            hover:bg-brand-purple hover:text-brand-cream 
+            transition duration-200 shadow-sm
+          "
         >
           <h2 className="text-2xl font-semibold mb-2">📘 Minha Biblioteca</h2>
-          <p>Veja e gerencie seus livros salvos.</p>
+          <p className="text-brand-softtext">Gerencie seus livros salvos.</p>
         </Link>
 
         <Link
           to="/explore"
-          className="p-6 bg-gray-800 rounded-xl hover:bg-gray-700 transition duration-200 shadow"
+          className="
+            p-6 rounded-xl 
+            bg-brand-sand 
+            border border-brand-taupe 
+            hover:bg-brand-purple hover:text-brand-cream 
+            transition duration-200 shadow-sm
+          "
         >
           <h2 className="text-2xl font-semibold mb-2">🔍 Explorar Livros</h2>
-          <p>Encontre novos livros usando a Google Books API.</p>
+          <p className="text-brand-softtext">Encontre novos livros para ler.</p>
         </Link>
 
       </div>
 
-      {/* ============================
-         Livros mais populares
-      ============================= */}
+      {/* Livros populares */}
       <section className="mb-16">
-        <h2 className="text-3xl font-bold mb-6">🔥 Livros Mais Populares</h2>
+        <h2 className="text-3xl font-bold mb-6 text-brand-purple">
+          🔥 Livros Mais Populares
+        </h2>
 
         {popularBooks.length === 0 ? (
-          <p className="text-gray-400">Nenhum livro popular encontrado.</p>
+          <p className="text-brand-softtext">Nenhum livro popular encontrado.</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
             {popularBooks.map((book) => (
               <Link
                 key={book.id}
                 to={`/book/${book.id}`}
-                className="bg-gray-800 p-4 rounded-xl shadow hover:bg-gray-700 transition"
+                className="
+                  bg-brand-sand p-4 rounded-xl 
+                  shadow-sm border border-brand-taupe
+                  hover:bg-brand-cream hover:scale-105
+                  transition
+                "
               >
                 <img
-                  src={book.cover_url || "/default-cover.png"}
+                  src={book.cover_url || '/default-cover.png'}
                   alt={book.title}
-                  className="w-full h-48 object-cover rounded mb-3"
+                  className="w-full h-48 object-cover rounded mb-3 shadow"
                 />
-                <h3 className="text-md font-semibold line-clamp-2">
+
+                <h3 className="text-md font-semibold line-clamp-2 text-brand-text">
                   {book.title}
                 </h3>
-                <p className="text-sm text-gray-400">
+
+                <p className="text-sm text-brand-softtext">
                   {book.author || "Autor desconhecido"}
                 </p>
               </Link>
@@ -119,31 +131,38 @@ export default function Home() {
         )}
       </section>
 
-      {/* ============================
-         Clássicos recomendados
-      ============================= */}
+      {/* Clássicos */}
       <section className="mb-10">
-        <h2 className="text-3xl font-bold mb-6">📖 Clássicos Recomendados</h2>
+        <h2 className="text-3xl font-bold mb-6 text-brand-purple">
+          📖 Clássicos Recomendados
+        </h2>
 
         {classicBooks.length === 0 ? (
-          <p className="text-gray-400">Carregando clássicos...</p>
+          <p className="text-brand-softtext">Carregando clássicos...</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
             {classicBooks.map((book) => (
               <Link
                 key={book.id}
                 to={`/book/${book.id}`}
-                className="bg-gray-800 p-4 rounded-xl shadow hover:bg-gray-700 transition"
+                className="
+                  bg-brand-sand p-4 rounded-xl 
+                  shadow-sm border border-brand-taupe
+                  hover:bg-brand-cream hover:scale-105
+                  transition
+                "
               >
                 <img
-                  src={book.cover_url || "/default-cover.png"}
+                  src={book.cover_url || '/default-cover.png'}
                   alt={book.title}
-                  className="w-full h-48 object-cover rounded mb-3"
+                  className="w-full h-48 object-cover rounded mb-3 shadow"
                 />
-                <h3 className="text-md font-semibold line-clamp-2">
+
+                <h3 className="text-md font-semibold line-clamp-2 text-brand-text">
                   {book.title}
                 </h3>
-                <p className="text-sm text-gray-400">
+
+                <p className="text-sm text-brand-softtext">
                   {book.author || "Autor desconhecido"}
                 </p>
               </Link>

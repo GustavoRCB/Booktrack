@@ -11,7 +11,6 @@ export default function Explore() {
 
   async function searchBooks() {
     if (!query.trim()) return;
-
     setLoading(true);
 
     try {
@@ -27,14 +26,8 @@ export default function Explore() {
 
   async function openBookPage(book) {
     try {
-      // 1. salvar no Supabase
       const res = await api.post("/external-books/add", book);
-
-      const bookId = res.data.id;
-
-      // 2. redirecionar para a página do livro
-      navigate(`/book/${bookId}`);
-
+      navigate(`/book/${res.data.id}`);
     } catch (err) {
       console.error("Erro ao salvar livro:", err);
       alert("Não foi possível salvar o livro.");
@@ -42,46 +35,82 @@ export default function Explore() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <h1 className="text-3xl font-bold mb-6">🔍 Explorar Livros</h1>
+    <div className="min-h-screen bg-brand-cream text-brand-text p-8">
 
+      {/* Título */}
+      <h1 className="text-3xl font-bold mb-6 text-brand-purple">
+        🔍 Explorar Livros
+      </h1>
+
+      {/* Barra de busca */}
       <div className="flex gap-2 mb-6">
         <input
-          className="p-2 bg-gray-700 rounded w-full"
+          className="
+            p-3 rounded w-full
+            bg-brand-sand
+            border border-brand-taupe
+            text-brand-text
+            placeholder-brand-softtext
+            focus:outline-none focus:ring-2 focus:ring-brand-purple
+            transition
+          "
           placeholder="Buscar livros..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+
         <button
           onClick={searchBooks}
-          className="bg-blue-600 px-4 rounded hover:bg-blue-700 transition"
+          className="
+            bg-brand-purple 
+            text-brand-cream 
+            px-5 rounded 
+            hover:bg-brand-royal 
+            transition
+          "
         >
           Buscar
         </button>
       </div>
 
-      {loading && <p className="text-gray-400">Buscando...</p>}
+      {loading && (
+        <p className="text-brand-softtext">Buscando...</p>
+      )}
 
+      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
         {results.map((book, i) => (
           <div
             key={i}
-            className="bg-gray-800 p-4 rounded-xl border border-gray-700 cursor-pointer hover:scale-105 transition"
+            className="
+              bg-brand-sand 
+              p-4 rounded-xl 
+              border border-brand-taupe 
+              cursor-pointer 
+              hover:scale-105 
+              hover:bg-brand-cream
+              transition shadow-sm
+            "
             onClick={() => openBookPage(book)}
           >
             <img
-              src={book.cover_url || "/default-cover.png"}
-              className="w-full h-64 object-cover rounded"
+              src={book.cover_url || '/default-cover.png'}
+              className="w-full h-64 object-cover rounded shadow"
               alt={book.title}
             />
 
-            <h2 className="text-lg font-bold mt-3">{book.title}</h2>
-            <p className="text-gray-400 text-sm">
+            <h2 className="text-lg font-bold mt-3 text-brand-text">
+              {book.title}
+            </h2>
+
+            <p className="text-brand-softtext text-sm">
               {book.author || "Autor desconhecido"}
             </p>
 
             {book.published_year && (
-              <p className="text-gray-500 text-xs mt-1">📅 {book.published_year}</p>
+              <p className="text-brand-text text-xs mt-1">
+                📅 {book.published_year}
+              </p>
             )}
           </div>
         ))}

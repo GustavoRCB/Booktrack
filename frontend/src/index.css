@@ -2,4 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Sua paleta global */
+:root {
+  --litto-creme: #F5EFE6;
+  --litto-marrom: #5A4631;
+  --litto-cafeSuave: #8C7256;
+  --litto-bege: #E3D3C1;
+  --litto-pretoCafe: #2E2418;
 
+  --litto-ouro: #C6A676;
+  --litto-caramelo: #A8743C;
+  --litto-verde: #809974;
+  --litto-terracota: #D3A18F;
+
+  --litto-dark-bg: #1E1A16;
+  --litto-dark-card: #3A2F25;
+  --litto-dark-creme: #F4EDE4;
+  --litto-dark-caramelo: #A4753D;
+}
+
+body {
+  background-color: var(--litto-creme);
+  color: var(--litto-marrom);
+}

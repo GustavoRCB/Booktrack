@@ -1,27 +1,106 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import api from "../services/api";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const [avatar, setAvatar] = useState(null);
 
   function logout() {
     localStorage.removeItem("token");
     navigate("/");
   }
 
+  useEffect(() => {
+    async function loadAvatar() {
+      try {
+        const res = await api.get("/profile/me");
+        setAvatar(res.data.profile?.avatar_url);
+      } catch (err) {
+        console.error("Erro ao carregar avatar:", err);
+      }
+    }
+    loadAvatar();
+  }, []);
+
   return (
-    <nav className="bg-gray-800 text-white px-6 py-4 flex items-center justify-between shadow-lg">
-      <Link to="/home" className="text-2xl font-bold">
-        BookTrack
+    <nav
+      className="
+        w-full 
+        backdrop-blur-md 
+        bg-white/60 
+        border-b border-brand-taupe/30
+        shadow-sm 
+        px-8 py-4 
+        flex items-center justify-between
+        sticky top-0 z-50
+      "
+    >
+      {/* LOGO */}
+      <Link
+        to="/home"
+        className="text-3xl font-semibold tracking-tight text-brand-purple"
+      >
+        Litto
       </Link>
 
-      <div className="flex gap-6">
-        <Link to="/home" className="hover:text-blue-400 duration-150">Home</Link>
-        <Link to="/library" className="hover:text-blue-400 duration-150">Biblioteca</Link>
-        <Link to="/explore" className="hover:text-blue-400 duration-150">Explorar</Link>
+      {/* LINKS */}
+      <div className="flex items-center gap-8 text-brand-text font-medium">
 
+        <Link
+          to="/home"
+          className="
+            hover:text-brand-purple 
+            transition-colors duration-200
+          "
+        >
+          Home
+        </Link>
+
+        <Link
+          to="/library"
+          className="hover:text-brand-purple transition"
+        >
+          Biblioteca
+        </Link>
+
+        <Link
+          to="/explore"
+          className="hover:text-brand-purple transition"
+        >
+          Explorar
+        </Link>
+
+        {/* Avatar */}
+        <Link to="/profile">
+          <img
+            src={avatar || "/default-avatar.png"}
+            alt="Perfil"
+            className="
+              w-10 h-10 
+              rounded-full 
+              object-cover 
+              border border-brand-purple/40 
+              hover:ring-2 hover:ring-brand-purple/50
+              transition
+              cursor-pointer
+            "
+          />
+        </Link>
+
+        {/* Botão Sair */}
         <button
           onClick={logout}
-          className="bg-red-600 px-3 py-1 rounded hover:bg-red-700 duration-150"
+          className="
+            bg-brand-purple 
+            text-white 
+            px-4 py-2 
+            rounded-lg 
+            font-medium 
+            hover:bg-brand-royal 
+            transition
+            shadow-sm
+          "
         >
           Sair
         </button>
