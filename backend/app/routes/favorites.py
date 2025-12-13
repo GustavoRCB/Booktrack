@@ -2,17 +2,50 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.dependencies import get_current_user
 from app.database.supabase_client import supabase
 
-router = APIRouter(prefix="/favorites", tags=["Favorites"])
+# ❗ NÃO definir prefix aqui
+router = APIRouter(tags=["Favorites"])
 
 
 # --------------------------------------------------
-# 1) ADICIONAR LIVRO AOS FAVORITOS
+# 1) LISTAR FAVORITOS
 # --------------------------------------------------
-@router.post("/{book_id}")
+@router.get("/favorites")
+def list_favorites(current_user: dict = Depends(get_current_user)):
+    user_id = current_user["user_id"]
+
+    user_res = (
+        supabase.table("users")
+        .select("favorite_books")
+        .eq("id", user_id)
+        .single()
+        .execute()
+    )
+
+    if not user_res.data:
+        return []
+
+    favorites = user_res.data.get("favorite_books") or []
+
+    if not favorites:
+        return []
+
+    books_res = (
+        supabase.table("public_books")
+        .select("*")
+        .in_("id", favorites)
+        .execute()
+    )
+
+    return books_res.data or []
+
+
+# --------------------------------------------------
+# 2) ADICIONAR FAVORITO
+# --------------------------------------------------
+@router.post("/favorites/{book_id}")
 def add_favorite(book_id: int, current_user: dict = Depends(get_current_user)):
     user_id = current_user["user_id"]
 
-    # pega os favoritos atuais
     user_res = (
         supabase.table("users")
         .select("favorite_books")
@@ -28,20 +61,24 @@ def add_favorite(book_id: int, current_user: dict = Depends(get_current_user)):
 
     favorites.append(book_id)
 
-    # atualiza no banco
-    supabase.table("users").update({"favorite_books": favorites}).eq("id", user_id).execute()
+    supabase.table("users") \
+        .update({"favorite_books": favorites}) \
+        .eq("id", user_id) \
+        .execute()
 
-    return {"message": "Livro adicionado aos favoritos", "favorite_books": favorites}
+    return {
+        "message": "Livro adicionado aos favoritos",
+        "favorite_books": favorites,
+    }
 
 
 # --------------------------------------------------
-# 2) REMOVER LIVRO DOS FAVORITOS
+# 3) REMOVER FAVORITO
 # --------------------------------------------------
-@router.delete("/{book_id}")
+@router.delete("/favorites/{book_id}")
 def remove_favorite(book_id: int, current_user: dict = Depends(get_current_user)):
     user_id = current_user["user_id"]
 
-    # pega os favoritos atuais
     user_res = (
         supabase.table("users")
         .select("favorite_books")
@@ -57,36 +94,12 @@ def remove_favorite(book_id: int, current_user: dict = Depends(get_current_user)
 
     favorites = [b for b in favorites if b != book_id]
 
-    supabase.table("users").update({"favorite_books": favorites}).eq("id", user_id).execute()
-
-    return {"message": "Livro removido dos favoritos", "favorite_books": favorites}
-
-
-# --------------------------------------------------
-# 3) LISTAR FAVORITOS DO USUÁRIO
-# --------------------------------------------------
-@router.get("/")
-def list_favorites(current_user: dict = Depends(get_current_user)):
-    user_id = current_user["user_id"]
-
-    user_res = (
-        supabase.table("users")
-        .select("favorite_books")
-        .eq("id", user_id)
-        .single()
+    supabase.table("users") \
+        .update({"favorite_books": favorites}) \
+        .eq("id", user_id) \
         .execute()
-    )
 
-    favorites = user_res.data.get("favorite_books") or []
-
-    if not favorites:
-        return []
-
-    book_res = (
-        supabase.table("public_books")
-        .select("*")
-        .in_("id", favorites)
-        .execute()
-    )
-
-    return book_res.data
+    return {
+        "message": "Livro removido dos favoritos",
+        "favorite_books": favorites,
+    }

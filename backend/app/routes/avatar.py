@@ -3,7 +3,7 @@ from app.dependencies import get_current_user
 from app.database.supabase_client import supabase
 import uuid
 
-router = APIRouter(prefix="/profile", tags=["Profile"])
+router = APIRouter(tags=["Avatar"])
 
 
 @router.post("/avatar")
@@ -13,24 +13,30 @@ def upload_avatar(
 ):
     user_id = current_user["user_id"]
 
-    # só aceita imagens
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(400, "Arquivo deve ser uma imagem.")
+    # aceita apenas imagens
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400,
+            detail="Arquivo deve ser uma imagem."
+        )
 
-    # nome único
+    # nome único do arquivo
     filename = f"{user_id}_{uuid.uuid4()}.png"
 
-    # upload para o bucket avatars
+    # upload para o bucket "avatars"
     supabase.storage.from_("avatars").upload(
         filename,
         file.file,
         file_options={"content-type": file.content_type}
     )
 
-    # url pública
-    url = supabase.storage.from_("avatars").get_public_url(filename)
+    # gerar URL pública
+    public_url = supabase.storage.from_("avatars").get_public_url(filename)
 
-    # salvar no usuário
-    supabase.table("users").update({"avatar_url": url}).eq("id", user_id).execute()
+    # salvar URL no usuário
+    supabase.table("users") \
+        .update({"avatar_url": public_url}) \
+        .eq("id", user_id) \
+        .execute()
 
-    return {"avatar_url": url}
+    return {"avatar_url": public_url}

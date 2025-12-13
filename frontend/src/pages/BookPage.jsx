@@ -14,31 +14,30 @@ export default function BookPage() {
   const [progress, setProgress] = useState("want");
   const [processing, setProcessing] = useState(false);
 
-  // ---------------------------
+  // ===========================
   // FAVORITOS
-  // ---------------------------
+  // ===========================
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
-    async function loadFavorite() {
+    async function loadFavorites() {
       try {
         const res = await api.get("/favorites");
-        const favIds = res.data.map((b) => b.id);
+        const favIds = (res.data || []).map((b) => Number(b.id));
         setIsFavorite(favIds.includes(Number(id)));
       } catch (err) {
-        console.log("Erro ao carregar favoritos:", err);
+        console.error("Erro ao carregar favoritos:", err);
       }
     }
 
-    loadFavorite();
+    loadFavorites();
   }, [id]);
 
   async function addFavorite() {
     try {
       await api.post(`/favorites/${id}`);
       setIsFavorite(true);
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Erro ao favoritar.");
     }
   }
@@ -47,52 +46,60 @@ export default function BookPage() {
     try {
       await api.delete(`/favorites/${id}`);
       setIsFavorite(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Erro ao remover dos favoritos.");
     }
   }
 
-  // -------------------------------------------------------
+  // ===========================
   // 1) Carregar livro
-  // -------------------------------------------------------
+  // ===========================
   useEffect(() => {
     async function loadBook() {
       try {
         const res = await api.get(`/public-books/${id}`);
         setBook(res.data || null);
-      } catch (error) {
-        console.error("Erro ao carregar livro:", error);
+      } catch {
         setBook(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
+
     loadBook();
   }, [id]);
 
-  // -------------------------------------------------------
-  // 2) Verificar se está na biblioteca
-  // -------------------------------------------------------
+  // ===========================
+  // 2) Verificar biblioteca
+  // ===========================
   useEffect(() => {
     async function checkLibrary() {
       try {
         const res = await api.get("/users/books");
-        const found = res.data.find((b) => String(b.book_id) === String(id));
+        const found = (res.data || []).find(
+          (b) => String(b.book_id) === String(id)
+        );
+
         if (found) {
           setInLibrary(true);
           setUserBookId(found.user_book_id);
           setProgress(found.status);
+        } else {
+          setInLibrary(false);
+          setUserBookId(null);
+          setProgress("want");
         }
-      } catch (error) {
-        console.error("Erro ao verificar biblioteca:", error);
+      } catch (err) {
+        console.error("Erro ao verificar biblioteca:", err);
       }
     }
-    if (book) checkLibrary();
-  }, [id, book]);
 
-  // -------------------------------------------------------
-  // 3) Adicionar
-  // -------------------------------------------------------
+    if (book) checkLibrary();
+  }, [book, id]);
+
+  // ===========================
+  // 3) Adicionar à biblioteca
+  // ===========================
   async function addToLibrary() {
     setProcessing(true);
     try {
@@ -100,15 +107,16 @@ export default function BookPage() {
       setInLibrary(true);
       setUserBookId(res.data.id);
       setProgress("want");
-    } catch (err) {
-      alert("Erro ao adicionar.");
+    } catch {
+      alert("Erro ao adicionar à biblioteca.");
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
   }
 
-  // -------------------------------------------------------
-  // 4) Remover
-  // -------------------------------------------------------
+  // ===========================
+  // 4) Remover da biblioteca
+  // ===========================
   async function removeFromLibrary() {
     if (!userBookId) return;
 
@@ -118,13 +126,13 @@ export default function BookPage() {
       setUserBookId(null);
       setProgress("want");
     } catch {
-      alert("Erro ao remover.");
+      alert("Erro ao remover da biblioteca.");
     }
   }
 
-  // -------------------------------------------------------
+  // ===========================
   // 5) Atualizar progresso
-  // -------------------------------------------------------
+  // ===========================
   async function updateProgress(newStatus) {
     if (!userBookId) return;
 
@@ -138,36 +146,36 @@ export default function BookPage() {
     }
   }
 
-  // -------------------------------------------------------
+  // ===========================
   // UI
-  // -------------------------------------------------------
-  if (loading)
+  // ===========================
+  if (loading) {
     return <p className="text-brand-purple p-8">Carregando...</p>;
+  }
 
-  if (!book)
+  if (!book) {
     return (
       <p className="text-brand-purple p-8">
         Livro não encontrado.
       </p>
     );
+  }
 
   return (
     <div className="min-h-screen bg-brand-cream text-brand-text p-10">
-
       <h1 className="text-4xl font-bold mb-6 text-brand-purple">
         {book.title || "Título Desconhecido"}
       </h1>
 
       <div className="bg-brand-sand border border-brand-taupe p-6 rounded-xl shadow flex gap-8">
-
         <img
           src={book.cover_url || ""}
-          alt={book.title || "Capa do livro"}
+          alt={book.title}
           className="w-48 h-72 object-cover rounded-xl shadow"
         />
 
         <div className="flex flex-col gap-2">
-          <p className="text-brand-softtext text-lg">
+          <p className="text-brand-softtext">
             <b className="text-brand-purple">Autor:</b>{" "}
             {book.author || "Desconhecido"}
           </p>
@@ -182,97 +190,71 @@ export default function BookPage() {
             {book.page_count || "N/A"}
           </p>
 
-          {/* ------------------------- */}
-          {/* BOTÃO FAVORITAR */}
-          {/* ------------------------- */}
           {isFavorite ? (
             <button
               onClick={removeFavorite}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
             >
               ❤️ Remover dos Favoritos
             </button>
           ) : (
             <button
               onClick={addFavorite}
-              className="bg-brand-purple text-white px-4 py-2 rounded-lg hover:bg-brand-royal transition"
+              className="bg-brand-purple text-white px-4 py-2 rounded-lg hover:bg-brand-royal"
             >
               🤍 Adicionar aos Favoritos
             </button>
           )}
 
-          {/* ------------------------- */}
-          {/* BIBLIOTECA */}
-          {/* ------------------------- */}
           {!inLibrary ? (
             <button
               onClick={addToLibrary}
               disabled={processing}
-              className="
-                  bg-brand-purple text-white px-4 py-2 rounded-lg 
-                  hover:bg-brand-royal transition disabled:bg-brand-softtext
-                "
+              className="bg-brand-purple text-white px-4 py-2 rounded-lg hover:bg-brand-royal disabled:opacity-60"
             >
               {processing ? "Adicionando..." : "➕ Adicionar à Biblioteca"}
             </button>
           ) : (
             <button
               onClick={removeFromLibrary}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
             >
               🗑️ Remover da Biblioteca
             </button>
           )}
 
-          {/* STATUS */}
           {inLibrary && (
             <div className="mt-4">
-              <h3 className="text-lg font-bold text-brand-purple mb-2">
+              <h3 className="font-bold text-brand-purple mb-2">
                 Status de Leitura
               </h3>
 
               <div className="flex gap-3">
-                <button
-                  onClick={() => updateProgress("want")}
-                  className={`px-3 py-1 rounded-lg ${
-                    progress === "want"
-                      ? "bg-brand-purple text-white"
-                      : "bg-brand-cream border border-brand-taupe hover:bg-brand-purple hover:text-white"
-                  }`}
-                >
-                  Quero Ler
-                </button>
-
-                <button
-                  onClick={() => updateProgress("reading")}
-                  className={`px-3 py-1 rounded-lg ${
-                    progress === "reading"
-                      ? "bg-brand-royal text-white"
-                      : "bg-brand-cream border border-brand-taupe hover:bg-brand-royal hover:text-white"
-                  }`}
-                >
-                  Lendo
-                </button>
-
-                <button
-                  onClick={() => updateProgress("finished")}
-                  className={`px-3 py-1 rounded-lg ${
-                    progress === "finished"
-                      ? "bg-brand-green text-white"
-                      : "bg-brand-cream border border-brand-taupe hover:bg-brand-green hover:text-white"
-                  }`}
-                >
-                  Terminado
-                </button>
+                {["want", "reading", "finished"].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => updateProgress(s)}
+                    className={`px-3 py-1 rounded-lg ${
+                      progress === s
+                        ? "bg-brand-purple text-white"
+                        : "bg-brand-cream border border-brand-taupe"
+                    }`}
+                  >
+                    {s === "want"
+                      ? "Quero Ler"
+                      : s === "reading"
+                      ? "Lendo"
+                      : "Terminado"}
+                  </button>
+                ))}
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* DESCRIÇÃO */}
       <div className="mt-10 bg-brand-sand border border-brand-taupe p-6 rounded-xl shadow">
-        <h2 className="text-xl font-bold mb-2 text-brand-purple">
+        <h2 className="text-xl font-bold text-brand-purple mb-2">
           Descrição
         </h2>
         <p className="text-brand-softtext">
@@ -280,19 +262,11 @@ export default function BookPage() {
         </p>
       </div>
 
-      {/* REVIEWS */}
       {book.id && (
         <div className="mt-10">
           <ReviewSection bookId={book.id} userBookId={userBookId} />
         </div>
       )}
-
-      <a
-        href="/explore"
-        className="inline-block mt-6 text-brand-purple hover:text-brand-royal underline"
-      >
-        ← Voltar à exploração
-      </a>
     </div>
   );
 }

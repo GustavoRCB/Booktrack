@@ -46,7 +46,11 @@ def root():
 # ================================
 # 📌 REGISTRO DAS ROTAS
 # ================================
+
+# Autenticação
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+
+# Usuários
 app.include_router(users_router, prefix="/users", tags=["Users"])
 
 # Catálogo de livros públicos
@@ -55,7 +59,7 @@ app.include_router(public_books_router, prefix="/public-books", tags=["Public Bo
 # Biblioteca pessoal
 app.include_router(user_books_router, tags=["User Books"])
 
-# Google Books API (já possui o prefixo interno próprio)
+# Google Books API (prefixo próprio)
 app.include_router(external_books_router)
 
 # Perfil do usuário
@@ -67,7 +71,7 @@ app.include_router(reviews_router, prefix="/reviews", tags=["Reviews"])
 # Upload de Avatar
 app.include_router(avatar_router, prefix="/profile", tags=["Avatar"])
 
-# Lista manual de Favoritos
+# Favoritos
 app.include_router(favorites_router, prefix="/profile", tags=["Favorites"])
 
 
@@ -85,7 +89,6 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    # JWT security
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
@@ -94,7 +97,6 @@ def custom_openapi():
         }
     }
 
-    # Aplica JWT automaticamente em todas as rotas (exceto /auth)
     for path, path_item in openapi_schema.get("paths", {}).items():
         if not path.startswith("/auth"):
             for method in path_item.values():

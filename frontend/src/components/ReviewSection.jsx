@@ -9,11 +9,11 @@ export default function ReviewSection({ bookId, userBookId }) {
   const [loading, setLoading] = useState(true);
 
   // ============================
-  // 1) Carregar Review
+  // 1) Carregar Review do Usuário
   // ============================
   useEffect(() => {
     async function loadMyReview() {
-      // Se o usuário NÃO adicionou o livro → não pode haver review
+      // Livro não está na biblioteca → não existe review
       if (!bookId || !userBookId) {
         setLoading(false);
         return;
@@ -21,29 +21,30 @@ export default function ReviewSection({ bookId, userBookId }) {
 
       try {
         const res = await api.get(`/reviews/my/${bookId}`);
-        const data = res.data;
 
-        // Aceita tanto { review: {...} } quanto o review direto
-        const review =
-          data?.review ??
-          (data && typeof data === "object" && "rating" in data ? data : null);
-
-        if (review) {
-          setRating(review.rating ?? 0);
-          setComment(review.comment ?? "");
+        // 🔹 Sem review → backend retorna null / 204 (OK)
+        if (!res.data) {
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error("Erro ao carregar review:", err);
-      }
 
-      setLoading(false);
+        setRating(res.data.rating ?? 0);
+        setComment(res.data.comment ?? "");
+      } catch (err) {
+        // 🔹 Ignora ausência de review
+        if (err.response?.status !== 404) {
+          console.error("Erro ao carregar review:", err);
+        }
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadMyReview();
   }, [bookId, userBookId]);
 
   // ============================
-  // 2) Enviar Review
+  // 2) Enviar / Atualizar Review
   // ============================
   async function handleSubmit(e) {
     e.preventDefault();
@@ -54,7 +55,7 @@ export default function ReviewSection({ bookId, userBookId }) {
     }
 
     if (rating < 1) {
-      setMessage("⚠️ Escolha uma nota (1 a 5 estrelas).");
+      setMessage("⚠️ Escolha uma nota de 1 a 5 estrelas.");
       return;
     }
 
@@ -83,8 +84,8 @@ export default function ReviewSection({ bookId, userBookId }) {
 
       setRating(0);
       setComment("");
-
       setMessage("🗑️ Review removida.");
+
       setTimeout(() => setMessage(""), 3000);
     } catch (err) {
       console.error(err);
@@ -99,7 +100,7 @@ export default function ReviewSection({ bookId, userBookId }) {
     return <p className="text-brand-purple">Carregando review...</p>;
   }
 
-  // Se o livro **não foi adicionado à biblioteca**
+  // Livro não está na biblioteca
   if (!userBookId) {
     return (
       <p className="text-brand-softtext mt-4">
@@ -110,7 +111,9 @@ export default function ReviewSection({ bookId, userBookId }) {
 
   return (
     <div className="bg-brand-sand p-6 rounded-xl shadow border border-brand-taupe">
-      <h3 className="text-xl font-bold mb-4 text-brand-purple">Sua Avaliação</h3>
+      <h3 className="text-xl font-bold mb-4 text-brand-purple">
+        Sua Avaliação
+      </h3>
 
       {/* ⭐ Estrelas */}
       <div className="mb-4 flex gap-1">
@@ -121,7 +124,9 @@ export default function ReviewSection({ bookId, userBookId }) {
             onMouseEnter={() => setHover(num)}
             onMouseLeave={() => setHover(0)}
             className={`text-3xl cursor-pointer transition-colors duration-200 ${
-              (hover || rating) >= num ? "text-yellow-500" : "text-gray-300"
+              (hover || rating) >= num
+                ? "text-yellow-500"
+                : "text-gray-300"
             }`}
           >
             ★
