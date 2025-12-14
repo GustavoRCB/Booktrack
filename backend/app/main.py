@@ -25,11 +25,14 @@ app = FastAPI(
 )
 
 # ================================
-# 🌐 CORS
+# 🌐 CORS (OBRIGATÓRIO PARA O FRONT)
 # ================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",     # Vite
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,32 +50,35 @@ def root():
 # 📌 REGISTRO DAS ROTAS
 # ================================
 
-# Autenticação
-app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+# Auth
+app.include_router(auth_router, prefix="/auth")
 
-# Usuários
-app.include_router(users_router, prefix="/users", tags=["Users"])
+# Users
+app.include_router(users_router, prefix="/users")
 
-# Catálogo de livros públicos
-app.include_router(public_books_router, prefix="/public-books", tags=["Public Books"])
+# Public books
+app.include_router(
+    public_books_router,
+    prefix="/public-books"
+)
 
-# Biblioteca pessoal
-app.include_router(user_books_router, tags=["User Books"])
+# User books
+app.include_router(user_books_router)
 
-# Google Books API (prefixo próprio)
+# External books (Google Books)
 app.include_router(external_books_router)
 
-# Perfil do usuário
-app.include_router(profile_router, prefix="/profile", tags=["Profile"])
+# Profile (dados, edição, stats)
+app.include_router(profile_router, prefix="/profile")
 
-# Reviews e Avaliações
-app.include_router(reviews_router, prefix="/reviews", tags=["Reviews"])
+# Avatar (upload)
+app.include_router(avatar_router, prefix="/profile")
 
-# Upload de Avatar
-app.include_router(avatar_router, prefix="/profile", tags=["Avatar"])
+# Favorites
+app.include_router(favorites_router, prefix="/profile")
 
-# Favoritos
-app.include_router(favorites_router, prefix="/profile", tags=["Favorites"])
+# Reviews
+app.include_router(reviews_router, prefix="/reviews")
 
 
 # ================================
@@ -89,11 +95,12 @@ def custom_openapi():
         routes=app.routes,
     )
 
+    openapi_schema.setdefault("components", {})
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
             "scheme": "bearer",
-            "bearerFormat": "JWT"
+            "bearerFormat": "JWT",
         }
     }
 

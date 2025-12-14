@@ -8,7 +8,11 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [recent, setRecent] = useState([]);
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState({
+    books_read: 0,
+    pages_read: 0,
+    average_rating: null,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,11 +30,15 @@ export default function ProfilePage() {
         setProfile(res.data.profile);
         setFavorites(res.data.favorites || []);
         setRecent(res.data.recent_books || []);
-        setStats(res.data.stats);
+        setStats(res.data.stats || {
+          books_read: 0,
+          pages_read: 0,
+          average_rating: null,
+        });
 
       } catch (err) {
         console.error("Erro ao carregar perfil:", err);
-        navigate("/");
+        setProfile(null);
       } finally {
         setLoading(false);
       }
@@ -40,7 +48,7 @@ export default function ProfilePage() {
   }, [navigate]);
 
   // ==============================
-  // ESTADOS: CARREGANDO OU ERRO
+  // ESTADOS
   // ==============================
   if (loading) {
     return <p className="text-brand-purple p-8">Carregando perfil...</p>;
@@ -49,7 +57,7 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <p className="text-red-600 p-8">
-        Erro ao carregar perfil. Tente novamente.
+        Não foi possível carregar o perfil.
       </p>
     );
   }
@@ -62,17 +70,38 @@ export default function ProfilePage() {
 
       {/* CABEÇALHO */}
       <div className="flex flex-col sm:flex-row items-center gap-6 mb-12">
+
         <img
           src={profile.avatar_url || "/default-avatar.png"}
           alt="avatar"
-          className="w-32 h-32 rounded-full object-cover border-2 border-brand-purple shadow-lg"
+          className="
+            w-32 h-32 rounded-full object-cover
+            border-2 border-brand-purple shadow-lg
+          "
         />
 
         <div className="text-center sm:text-left">
-          <h1 className="text-4xl font-bold text-brand-purple">{profile.name}</h1>
-          <p className="text-brand-softtext">
+          <h1 className="text-4xl font-bold text-brand-purple">
+            {profile.name}
+          </h1>
+
+          <p className="text-brand-softtext mt-1">
             {profile.bio || "Sem biografia ainda."}
           </p>
+
+          {/* BOTÃO EDITAR */}
+          <Link
+            to="/profile/edit"
+            className="
+              inline-block mt-4
+              px-4 py-2
+              bg-brand-purple text-white
+              rounded-lg
+              hover:bg-brand-royal transition
+            "
+          >
+            ✏️ Editar perfil
+          </Link>
         </div>
       </div>
 
@@ -100,7 +129,9 @@ export default function ProfilePage() {
 
           <div className="bg-brand-sand p-6 rounded-xl text-center border border-brand-taupe shadow">
             <p className="text-4xl font-bold text-brand-gold">
-              {stats.average_rating ? stats.average_rating.toFixed(1) : "-"}
+              {stats.average_rating !== null
+                ? stats.average_rating.toFixed(1)
+                : "-"}
             </p>
             <p className="text-brand-softtext mt-2">Nota média</p>
           </div>
@@ -110,10 +141,14 @@ export default function ProfilePage() {
 
       {/* FAVORITOS */}
       <section className="mb-14">
-        <h2 className="text-2xl font-semibold mb-4 text-brand-marrom">⭐ Favoritos</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-brand-marrom">
+          ⭐ Favoritos
+        </h2>
 
         {favorites.length === 0 ? (
-          <p className="text-brand-softtext">Você ainda não marcou favoritos.</p>
+          <p className="text-brand-softtext">
+            Você ainda não marcou favoritos.
+          </p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
             {favorites.map((book) => (
@@ -121,11 +156,9 @@ export default function ProfilePage() {
                 key={book.id}
                 to={`/book/${book.id}`}
                 className="
-                  bg-brand-sand 
-                  p-4 rounded-xl 
-                  shadow border border-brand-taupe 
-                  hover:bg-brand-cream 
-                  transition
+                  bg-brand-sand p-4 rounded-xl
+                  shadow border border-brand-taupe
+                  hover:bg-brand-cream transition
                 "
               >
                 <img
@@ -133,7 +166,9 @@ export default function ProfilePage() {
                   alt={book.title}
                   className="w-full h-40 object-cover rounded mb-3 shadow"
                 />
-                <p className="font-semibold text-sm line-clamp-2">{book.title}</p>
+                <p className="font-semibold text-sm line-clamp-2">
+                  {book.title}
+                </p>
               </Link>
             ))}
           </div>
@@ -155,11 +190,9 @@ export default function ProfilePage() {
                 key={book.id}
                 to={`/book/${book.id}`}
                 className="
-                  bg-brand-sand 
-                  p-4 rounded-xl 
-                  shadow border border-brand-taupe 
-                  hover:bg-brand-cream 
-                  transition
+                  bg-brand-sand p-4 rounded-xl
+                  shadow border border-brand-taupe
+                  hover:bg-brand-cream transition
                 "
               >
                 <img
@@ -167,7 +200,9 @@ export default function ProfilePage() {
                   alt={book.title}
                   className="w-full h-40 object-cover rounded mb-3 shadow"
                 />
-                <p className="font-semibold text-sm line-clamp-2">{book.title}</p>
+                <p className="font-semibold text-sm line-clamp-2">
+                  {book.title}
+                </p>
               </Link>
             ))}
           </div>

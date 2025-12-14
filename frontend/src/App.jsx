@@ -11,18 +11,20 @@ import Home from "./pages/Home";
 import BookPage from "./pages/BookPage";
 import Explore from "./pages/Explore";
 import ProfilePage from "./pages/ProfilePage";
+import EditProfilePage from "./pages/EditProfilePage"; // ✅ IMPORTANTE
 
 // ==============================
 // Wrapper para esconder a navbar
-// em rotas públicas (login/register)
 // ==============================
 function Layout({ children }) {
   const location = useLocation();
-  const noNavbar = ["/", "/register"].includes(location.pathname);
+
+  const noNavbarRoutes = ["/", "/register"];
+  const hideNavbar = noNavbarRoutes.includes(location.pathname);
 
   return (
     <>
-      {!noNavbar && <Navbar />}
+      {!hideNavbar && <Navbar />}
       {children}
     </>
   );
@@ -34,23 +36,22 @@ function App() {
       <Layout>
         <Routes>
 
-          {/* Acesso público */}
+          {/* Públicas */}
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Rotas privadas */}
+          {/* Privadas */}
           <Route path="/home" element={<Home />} />
           <Route path="/library" element={<Library />} />
           <Route path="/explore" element={<Explore />} />
 
-          {/* Livro do catálogo interno */}
+          {/* Livro */}
           <Route path="/book/:id" element={<BookPage />} />
-
-          {/* Livro vindo do Google — usando a MESMA BookPage */}
           <Route path="/book/google/:gid" element={<BookPage />} />
 
-          {/* Perfil do usuário */}
+          {/* Perfil */}
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/edit" element={<EditProfilePage />} /> {/* ✅ */}
 
         </Routes>
       </Layout>

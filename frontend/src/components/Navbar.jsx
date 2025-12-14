@@ -8,33 +8,28 @@ export default function Navbar() {
 
   function logout() {
     localStorage.removeItem("token");
-    navigate("/");
+    navigate("/"); // Redireciona para a tela inicial
   }
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return; // Se não estiver logado, não faz a requisição
+
     async function loadAvatar() {
       try {
-        const res = await api.get("/profile/me");
-        setAvatar(res.data.profile?.avatar_url);
+        const res = await api.get("/profile/me"); // Requisição para obter o avatar do perfil
+        setAvatar(res.data.profile?.avatar_url || "/default-avatar.png");
       } catch (err) {
         console.error("Erro ao carregar avatar:", err);
       }
     }
+
     loadAvatar();
   }, []);
 
   return (
     <nav
-      className="
-        w-full 
-        backdrop-blur-md 
-        bg-white/60 
-        border-b border-brand-taupe/30
-        shadow-sm 
-        px-8 py-4 
-        flex items-center justify-between
-        sticky top-0 z-50
-      "
+      className="w-full backdrop-blur-md bg-white/60 border-b border-brand-taupe/30 shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-50"
     >
       {/* LOGO */}
       <Link
@@ -46,13 +41,9 @@ export default function Navbar() {
 
       {/* LINKS */}
       <div className="flex items-center gap-8 text-brand-text font-medium">
-
         <Link
           to="/home"
-          className="
-            hover:text-brand-purple 
-            transition-colors duration-200
-          "
+          className="hover:text-brand-purple transition-colors"
         >
           Home
         </Link>
@@ -71,8 +62,8 @@ export default function Navbar() {
           Explorar
         </Link>
 
-        {/* Avatar */}
-        <Link to="/profile">
+        {/* AVATAR → PERFIL */}
+        <Link to="/profile"> {/* Aqui é o link correto para acessar o perfil */}
           <img
             src={avatar || "/default-avatar.png"}
             alt="Perfil"
@@ -88,7 +79,7 @@ export default function Navbar() {
           />
         </Link>
 
-        {/* Botão Sair */}
+        {/* SAIR */}
         <button
           onClick={logout}
           className="

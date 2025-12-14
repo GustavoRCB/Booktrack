@@ -10,7 +10,7 @@ export default {
         brand: {
           // Base Neutra
           cream: "#F7F4EF",
-          sand: "#ECE8F2",
+          sand: "#ffffffff",
           taupe: "#C9BCAD",
 
           // Terrosos
@@ -19,7 +19,7 @@ export default {
           leather: "#B08C6A",
 
           // Roxos Modernos
-          lavender: "#C9B7DD",
+          lavender: "#e0d4eeff",
           violet: "#A68EC4",
           purple: "#6D4E9E",
           royal: "#4B3572",
