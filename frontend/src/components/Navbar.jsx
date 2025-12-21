@@ -8,16 +8,16 @@ export default function Navbar() {
 
   function logout() {
     localStorage.removeItem("token");
-    navigate("/"); // Redireciona para a tela inicial
+    navigate("/"); // Redireciona para login
   }
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return; // Se não estiver logado, não faz a requisição
+    if (!token) return;
 
     async function loadAvatar() {
       try {
-        const res = await api.get("/profile/me"); // Requisição para obter o avatar do perfil
+        const res = await api.get("/profile/me");
         setAvatar(res.data.profile?.avatar_url || "/default-avatar.png");
       } catch (err) {
         console.error("Erro ao carregar avatar:", err);
@@ -28,9 +28,8 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav
-      className="w-full backdrop-blur-md bg-white/60 border-b border-brand-taupe/30 shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-50"
-    >
+    <nav className="w-full backdrop-blur-md bg-white/60 border-b border-brand-taupe/30 shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+      
       {/* LOGO */}
       <Link
         to="/home"
@@ -62,8 +61,16 @@ export default function Navbar() {
           Explorar
         </Link>
 
+        {/* ✅ SOBRE */}
+        <Link
+          to="/about"
+          className="hover:text-brand-purple transition"
+        >
+          Sobre
+        </Link>
+
         {/* AVATAR → PERFIL */}
-        <Link to="/profile"> {/* Aqui é o link correto para acessar o perfil */}
+        <Link to="/profile">
           <img
             src={avatar || "/default-avatar.png"}
             alt="Perfil"

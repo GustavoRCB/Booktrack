@@ -11,7 +11,8 @@ import Home from "./pages/Home";
 import BookPage from "./pages/BookPage";
 import Explore from "./pages/Explore";
 import ProfilePage from "./pages/ProfilePage";
-import EditProfilePage from "./pages/EditProfilePage"; // ✅ IMPORTANTE
+import EditProfilePage from "./pages/EditProfilePage";
+import AboutPage from "./pages/AboutPage"; // ✅ NOVA PÁGINA
 
 // ==============================
 // Wrapper para esconder a navbar
@@ -51,7 +52,10 @@ function App() {
 
           {/* Perfil */}
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/profile/edit" element={<EditProfilePage />} /> {/* ✅ */}
+          <Route path="/profile/edit" element={<EditProfilePage />} />
+
+          {/* Institucional */}
+          <Route path="/about" element={<AboutPage />} /> {/* ✅ */}
 
         </Routes>
       </Layout>

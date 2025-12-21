@@ -2,7 +2,7 @@ import requests
 
 GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes"
 
-def search_google_books(query: str, max_results: int = 10):
+def search_google_books(query: str, max_results: int = 30):
     response = requests.get(GOOGLE_BOOKS_URL, params={
         "q": query,
         "maxResults": max_results

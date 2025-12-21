@@ -18,11 +18,15 @@ export default function BookPage() {
   // FAVORITOS
   // ===========================
   const [isFavorite, setIsFavorite] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
 
+  // ---------------------------
+  // Carregar favoritos
+  // ---------------------------
   useEffect(() => {
     async function loadFavorites() {
       try {
-        const res = await api.get("/favorites");
+        const res = await api.get("/profile/favorites");
         const favIds = (res.data || []).map((b) => Number(b.id));
         setIsFavorite(favIds.includes(Number(id)));
       } catch (err) {
@@ -34,20 +38,32 @@ export default function BookPage() {
   }, [id]);
 
   async function addFavorite() {
+    if (favLoading) return;
+    setFavLoading(true);
+
     try {
-      await api.post(`/favorites/${id}`);
+      await api.post(`/profile/favorites/${id}`);
       setIsFavorite(true);
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("Erro ao favoritar.");
+    } finally {
+      setFavLoading(false);
     }
   }
 
   async function removeFavorite() {
+    if (favLoading) return;
+    setFavLoading(true);
+
     try {
-      await api.delete(`/favorites/${id}`);
+      await api.delete(`/profile/favorites/${id}`);
       setIsFavorite(false);
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("Erro ao remover dos favoritos.");
+    } finally {
+      setFavLoading(false);
     }
   }
 
@@ -101,7 +117,9 @@ export default function BookPage() {
   // 3) Adicionar à biblioteca
   // ===========================
   async function addToLibrary() {
+    if (processing) return;
     setProcessing(true);
+
     try {
       const res = await api.post(`/users/books/add/${id}`);
       setInLibrary(true);
@@ -174,7 +192,7 @@ export default function BookPage() {
           className="w-48 h-72 object-cover rounded-xl shadow"
         />
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <p className="text-brand-softtext">
             <b className="text-brand-purple">Autor:</b>{" "}
             {book.author || "Desconhecido"}
@@ -190,22 +208,26 @@ export default function BookPage() {
             {book.page_count || "N/A"}
           </p>
 
+          {/* FAVORITO */}
           {isFavorite ? (
             <button
               onClick={removeFavorite}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+              disabled={favLoading}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-60"
             >
               ❤️ Remover dos Favoritos
             </button>
           ) : (
             <button
               onClick={addFavorite}
-              className="bg-brand-purple text-white px-4 py-2 rounded-lg hover:bg-brand-royal"
+              disabled={favLoading}
+              className="bg-brand-purple text-white px-4 py-2 rounded-lg hover:bg-brand-royal disabled:opacity-60"
             >
               🤍 Adicionar aos Favoritos
             </button>
           )}
 
+          {/* BIBLIOTECA */}
           {!inLibrary ? (
             <button
               onClick={addToLibrary}
@@ -253,6 +275,7 @@ export default function BookPage() {
         </div>
       </div>
 
+      {/* DESCRIÇÃO */}
       <div className="mt-10 bg-brand-sand border border-brand-taupe p-6 rounded-xl shadow">
         <h2 className="text-xl font-bold text-brand-purple mb-2">
           Descrição
@@ -262,6 +285,7 @@ export default function BookPage() {
         </p>
       </div>
 
+      {/* REVIEW */}
       {book.id && (
         <div className="mt-10">
           <ReviewSection bookId={book.id} userBookId={userBookId} />

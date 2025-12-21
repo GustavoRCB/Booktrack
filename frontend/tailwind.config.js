@@ -11,7 +11,7 @@ export default {
           // Base Neutra
           cream: "#F7F4EF",
           sand: "#ffffffff",
-          taupe: "#C9BCAD",
+          taupe: "#c1b6ceff",
 
           // Terrosos
           earth: "#8B6A4A",

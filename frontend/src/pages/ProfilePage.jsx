@@ -120,12 +120,7 @@ export default function ProfilePage() {
             <p className="text-brand-softtext mt-2">Livros lidos</p>
           </div>
 
-          <div className="bg-brand-sand p-6 rounded-xl text-center border border-brand-taupe shadow">
-            <p className="text-4xl font-bold text-brand-royal">
-              {stats.pages_read}
-            </p>
-            <p className="text-brand-softtext mt-2">Páginas lidas</p>
-          </div>
+          
 
           <div className="bg-brand-sand p-6 rounded-xl text-center border border-brand-taupe shadow">
             <p className="text-4xl font-bold text-brand-gold">
@@ -175,39 +170,7 @@ export default function ProfilePage() {
         )}
       </section>
 
-      {/* RECENTES */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-4 text-brand-marrom">
-          📚 Últimos adicionados
-        </h2>
-
-        {recent.length === 0 ? (
-          <p className="text-brand-softtext">Nenhum livro recente.</p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
-            {recent.map((book) => (
-              <Link
-                key={book.id}
-                to={`/book/${book.id}`}
-                className="
-                  bg-brand-sand p-4 rounded-xl
-                  shadow border border-brand-taupe
-                  hover:bg-brand-cream transition
-                "
-              >
-                <img
-                  src={book.cover_url}
-                  alt={book.title}
-                  className="w-full h-40 object-cover rounded mb-3 shadow"
-                />
-                <p className="font-semibold text-sm line-clamp-2">
-                  {book.title}
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      
 
     </div>
   );
