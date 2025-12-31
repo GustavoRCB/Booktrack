@@ -8,7 +8,7 @@ export default function Navbar() {
 
   function logout() {
     localStorage.removeItem("token");
-    navigate("/"); // Redireciona para login
+    navigate("/");
   }
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="w-full backdrop-blur-md bg-white/60 border-b border-brand-taupe/30 shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+    <nav className="w-full backdrop-blur-md bg-white/60 border-b border-brand-taupe/30 shadow-sm px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-50">
       
       {/* LOGO */}
       <Link
@@ -39,29 +39,31 @@ export default function Navbar() {
       </Link>
 
       {/* LINKS */}
-      <div className="flex items-center gap-8 text-brand-text font-medium">
+      <div className="flex items-center gap-4 sm:gap-8 text-brand-text font-medium">
+        
+        {/* LINKS GRANDES (somem no mobile) */}
         <Link
           to="/home"
-          className="hover:text-brand-purple transition-colors"
+          className="hidden sm:block hover:text-brand-purple transition"
         >
           Home
         </Link>
 
         <Link
           to="/library"
-          className="hover:text-brand-purple transition"
+          className="hidden sm:block hover:text-brand-purple transition"
         >
           Biblioteca
         </Link>
 
         <Link
           to="/explore"
-          className="hover:text-brand-purple transition"
+          className="hidden sm:block hover:text-brand-purple transition"
         >
           Explorar
         </Link>
 
-        {/* ✅ SOBRE */}
+        {/* SOBRE (sempre visível) */}
         <Link
           to="/about"
           className="hover:text-brand-purple transition"
@@ -69,16 +71,17 @@ export default function Navbar() {
           Sobre
         </Link>
 
-        {/* AVATAR → PERFIL */}
-        <Link to="/profile">
+        {/* PERFIL */}
+        <Link to="/profile" className="shrink-0">
           <img
             src={avatar || "/default-avatar.png"}
             alt="Perfil"
             className="
-              w-10 h-10 
-              rounded-full 
-              object-cover 
-              border border-brand-purple/40 
+              w-10 h-10
+              rounded-full
+              object-cover
+              aspect-square
+              border border-brand-purple/40
               hover:ring-2 hover:ring-brand-purple/50
               transition
               cursor-pointer
@@ -90,14 +93,16 @@ export default function Navbar() {
         <button
           onClick={logout}
           className="
-            bg-brand-purple 
-            text-white 
-            px-4 py-2 
-            rounded-lg 
-            font-medium 
-            hover:bg-brand-royal 
+            bg-brand-purple
+            text-white
+            px-3 sm:px-4
+            py-2
+            rounded-lg
+            font-medium
+            hover:bg-brand-royal
             transition
             shadow-sm
+            whitespace-nowrap
           "
         >
           Sair

@@ -1,7 +1,7 @@
 # app/schemas.py
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-
+from datetime import date
 # =======================================================
 # USERS
 # =======================================================
@@ -88,6 +88,7 @@ class UserBookDetailed(BaseModel):
 
 class ProgressUpdate(BaseModel):
     status: str  # want | reading | read
+    completion_date: Optional[date] = None
 
 
 # =======================================================

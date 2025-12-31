@@ -11,7 +11,7 @@ export default function Library() {
 
   const navigate = useNavigate();
 
-  // 🔌 Carregar biblioteca
+  //  Carregar biblioteca
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return navigate("/");
@@ -27,7 +27,7 @@ export default function Library() {
       .catch(() => navigate("/"));
   }, []);
 
-  // 🎯 Aplicar filtro
+  // Aplicar filtro
   useEffect(() => {
     if (statusFilter === "all") {
       setFiltered(books);
@@ -36,7 +36,7 @@ export default function Library() {
     }
   }, [statusFilter, books]);
 
-  // 🗑️ Remover livro
+  //  Remover livro
   async function deleteBook(userBookId) {
     try {
       await api.delete(`/users/books/remove/${userBookId}`);
@@ -50,10 +50,10 @@ export default function Library() {
     <div className="min-h-screen bg-brand-cream text-brand-text p-10">
 
       <h1 className="text-4xl font-bold mb-10 text-center text-brand-purple">
-        📚 Minha Biblioteca
+        Minha Biblioteca
       </h1>
 
-      {/* 🔎 FILTRO */}
+      {/* FILTRO */}
       {books.length > 0 && (
         <div className="flex justify-center mb-8">
           <select
@@ -99,7 +99,8 @@ export default function Library() {
             >
               {/* Capa */}
               <Link to={`/book/${book.book_id}`}>
-                <div className="w-full aspect-[3/4] mb-4">
+                <div className="w-full max-h-66 aspect-[3/4] mb-3">
+
                   <img
                     src={book.cover_url || "/default-cover.png"}
                     alt={book.title}
@@ -115,36 +116,23 @@ export default function Library() {
 
               {/* Autor */}
               <p className="text-brand-softtext text-sm mb-1">
-                ✍ {book.author || "Autor desconhecido"}
+                {book.author || "Autor desconhecido"}
               </p>
 
               {/* Status */}
               <p className="text-sm mt-2 mb-3">
-                <b>Status: </b>{" "}
+                <b> </b>{" "}
                 {book.status === "want"
-                  ? "📘 Quero ler"
+                  ? "Quero ler"
                   : book.status === "reading"
-                  ? "📖 Lendo"
-                  : "✅ Terminado"}
+                  ? "Lendo"
+                  : "Terminado"}
               </p>
 
               {/* Botões */}
               <div className="flex items-center justify-between mt-6">
 
-                <Link
-                  to={`/book/${book.book_id}`}
-                  className="
-                    flex items-center gap-2 
-                    bg-brand-purple 
-                    text-brand-cream
-                    hover:bg-brand-royal 
-                    px-3 py-2 rounded-lg 
-                    transition text-sm
-                  "
-                >
-                  <BookOpen size={18} />
-                  Ver mais
-                </Link>
+                
 
                 <button
                   className="

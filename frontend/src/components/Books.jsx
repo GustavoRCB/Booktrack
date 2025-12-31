@@ -21,7 +21,7 @@ export default function Books() {
 
   return (
     <div>
-      <h2>📚 Livros</h2>
+      <h2> Livros</h2>
       {books.length === 0 && <p>Nenhum livro cadastrado.</p>}
       <ul>
         {books.map(book => (

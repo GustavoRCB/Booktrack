@@ -13,6 +13,7 @@ from app.routes.profile import router as profile_router
 from app.routes.reviews import router as reviews_router
 from app.routes.avatar import router as avatar_router
 from app.routes.favorites import router as favorites_router
+from app.routes.site_stats import router as site_stats_router  # ✅ IMPORT CORRETO
 
 
 # ================================
@@ -25,12 +26,12 @@ app = FastAPI(
 )
 
 # ================================
-# 🌐 CORS (OBRIGATÓRIO PARA O FRONT)
+# 🌐 CORS
 # ================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",     # Vite
+        "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
     allow_credentials=True,
@@ -45,41 +46,21 @@ app.add_middleware(
 def root():
     return {"message": "API funcionando!"}
 
-
 # ================================
 # 📌 REGISTRO DAS ROTAS
 # ================================
-
-# Auth
 app.include_router(auth_router, prefix="/auth")
-
-# Users
 app.include_router(users_router, prefix="/users")
-
-# Public books
-app.include_router(
-    public_books_router,
-    prefix="/public-books"
-)
-
-# User books
+app.include_router(public_books_router, prefix="/public-books")
 app.include_router(user_books_router)
-
-# External books (Google Books)
 app.include_router(external_books_router)
-
-# Profile (dados, edição, stats)
 app.include_router(profile_router, prefix="/profile")
-
-# Avatar (upload)
 app.include_router(avatar_router, prefix="/profile")
-
-# Favorites
 app.include_router(favorites_router, prefix="/profile")
-
-# Reviews
 app.include_router(reviews_router, prefix="/reviews")
 
+# ✅ SITE STATS (ANTES DO OPENAPI)
+app.include_router(site_stats_router)
 
 # ================================
 # 📘 OPENAPI PERSONALIZADO (JWT)
@@ -105,12 +86,11 @@ def custom_openapi():
     }
 
     for path, path_item in openapi_schema.get("paths", {}).items():
-        if not path.startswith("/auth"):
+        if not path.startswith(("/auth", "/stats")):
             for method in path_item.values():
                 method.setdefault("security", [{"BearerAuth": []}])
 
     app.openapi_schema = openapi_schema
     return app.openapi_schema
-
 
 app.openapi = custom_openapi

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from datetime import date
+
 from app.database.supabase_client import supabase
 from app.dependencies import get_current_user
 
@@ -87,7 +89,7 @@ def get_profile(current_user: dict = Depends(get_current_user)):
             if r.get("rating") is not None
         ]
 
-    # 6) Livros finalizados
+    # 6) Livros finalizados (TOTAL)
     finished_books = set()
     if user_book_ids:
         progress_res = (
@@ -101,6 +103,30 @@ def get_profile(current_user: dict = Depends(get_current_user)):
             p["user_book_id"] for p in (progress_res.data or [])
         }
 
+    # 7) Livros finalizados NO ANO ATUAL
+    finished_books_this_year = set()
+
+    if user_book_ids:
+        current_year = date.today().year
+        start_date = f"{current_year}-01-01"
+        end_date = f"{current_year}-12-31"
+
+        progress_year_res = (
+            supabase.table("progress")
+            .select("user_book_id, completion_date")
+            .in_("user_book_id", user_book_ids)
+            .eq("status", "finished")
+            .gte("completion_date", start_date)
+            .lte("completion_date", end_date)
+            .execute()
+        )
+
+        finished_books_this_year = {
+            p["user_book_id"]
+            for p in (progress_year_res.data or [])
+            if p.get("completion_date")
+        }
+
     return {
         "profile": {
             "name": user["name"],
@@ -111,8 +137,9 @@ def get_profile(current_user: dict = Depends(get_current_user)):
         "favorites": favorite_books,
         "recent_books": recent_books,
         "stats": {
-            "books_read": len(finished_books),
-            "pages_read": 0,  # pode evoluir depois
+            "books_read": len(finished_books),              # TOTAL
+            "books_read_this_year": len(finished_books_this_year),  # ANO ATUAL
+            "pages_read": 0,  # evolução futura
             "average_rating": round(sum(ratings) / len(ratings), 2)
             if ratings else None,
         },

@@ -6,14 +6,22 @@ export default function AboutPage() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    api.get("/analytics/visits")
-      .then(res => {
-        setVisits(res.data?.visits ?? 0);
+    async function loadVisits() {
+      try {
+        // 1️⃣ Registra a visita
+        await api.post("/stats/visit");
+
+        // 2️⃣ Busca o total atualizado
+        const res = await api.get("/stats/visits");
+        setVisits(res.data?.total_visits ?? 0);
+      } catch (err) {
+        console.error("Erro ao carregar contador de visitas:", err);
+      } finally {
         setLoaded(true);
-      })
-      .catch(() => {
-        setLoaded(true);
-      });
+      }
+    }
+
+    loadVisits();
   }, []);
 
   return (
@@ -22,7 +30,7 @@ export default function AboutPage() {
       {/* Título */}
       <header>
         <h1 className="text-2xl font-semibold text-gray-900">
-          Sobre o BookTrack
+          Sobre o Litto
         </h1>
         <p className="text-gray-600 mt-2">
           Uma plataforma para acompanhar e organizar sua jornada de leitura.
@@ -31,17 +39,35 @@ export default function AboutPage() {
 
       {/* Sobre */}
       <section className="bg-white rounded-xl shadow-sm p-6 space-y-3">
-        <h2 className="text-lg font-medium">📖 O que é o BookTrack</h2>
+        <h2 className="text-lg font-medium"> O que é o Litto</h2>
         <p className="text-gray-700 text-sm leading-relaxed">
-          O BookTrack é um projeto web desenvolvido com o objetivo de ajudar
-          leitores a registrar livros, acompanhar o progresso de leitura e
-          escrever resenhas de forma simples e organizada.
+          O Litto é um projeto web desenvolvido com foco em aprendizado e uso pessoal.
+Ele surgiu a partir da minha insatisfação com as plataformas de leitura atuais, que frequentemente apresentam interfaces poluídas e excesso de funcionalidades pouco relevantes.
+
+Por isso, o Litto foi pensado de forma minimalista, concentrando-se apenas nas funcionalidades que considero essenciais para organizar leituras e acompanhar o hábito de leitura de maneira simples e objetiva.
+
+De acordo com o interesse e o retorno do projeto, novas funcionalidades poderão ser adicionadas, e a plataforma continuará evoluindo conforme a demanda dos usuários.
         </p>
       </section>
 
-      {/* Objetivos */}
+      {/* metas */}
       <section className="bg-white rounded-xl shadow-sm p-6 space-y-3">
-        <h2 className="text-lg font-medium">🎯 Objetivos</h2>
+        <h2 className="text-lg font-medium"> Metas futuras</h2>
+        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+          <li>Melhorias no sistema de busca:
+Refinar filtros, relevância dos resultados e desempenho geral da busca por livros.</li>
+          <li>Reviews públicas:
+Possibilidade de tornar resenhas visíveis para outros usuários, com avaliações e comentários.</li>
+          <li>Sistema de recomendação personalizada:
+Sugestão de livros com base no histórico de leitura, avaliações, gêneros preferidos e comportamento do usuário.</li>
+          <li>Aprimoramento do sistema de perfil e contas:
+Expansão das informações do perfil, preferências do usuário e maior controle sobre dados e configurações.</li>
+        </ul>
+      </section>
+
+      {/* objetivos */}
+      <section className="bg-white rounded-xl shadow-sm p-6 space-y-3">
+        <h2 className="text-lg font-medium"> Obejetivos</h2>
         <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
           <li>Organizar leituras em um único lugar</li>
           <li>Estimular o hábito da leitura</li>
@@ -50,20 +76,9 @@ export default function AboutPage() {
         </ul>
       </section>
 
-      {/* Metas */}
-      <section className="bg-white rounded-xl shadow-sm p-6 space-y-3">
-        <h2 className="text-lg font-medium">🚀 Metas futuras</h2>
-        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-          <li>Sistema de favoritos</li>
-          <li>Recomendações personalizadas</li>
-          <li>Estatísticas avançadas de leitura</li>
-          <li>Melhorias contínuas de usabilidade</li>
-        </ul>
-      </section>
-
       {/* Contato */}
       <section className="bg-white rounded-xl shadow-sm p-6 space-y-3">
-        <h2 className="text-lg font-medium">📬 Contato e feedback</h2>
+        <h2 className="text-lg font-medium"> Contato e feedback</h2>
         <p className="text-sm text-gray-700">
           Encontrou um problema ou tem alguma sugestão?
         </p>
@@ -75,20 +90,20 @@ export default function AboutPage() {
             target="_blank"
             rel="noreferrer"
           >
-            github.com/seu-usuario
+            https://github.com/GustavoRCB
           </a>
         </p>
         <p className="text-sm text-gray-700">
-          Email: seuemail@email.com
+          Email: gustavo.rocha.costa.brito@gmail.com
         </p>
       </section>
 
-      {/* Contador */}
+      {/* Contador de acessos */}
       {loaded && (
         <footer className="text-center text-sm text-gray-500 pt-4 space-y-1">
-          <p>👀 {visits} acessos ao projeto</p>
+          <p> {visits} acessos ao projeto</p>
           <p className="text-xs text-gray-400">
-            Métrica anônima utilizada apenas para fins educacionais.
+           
           </p>
         </footer>
       )}

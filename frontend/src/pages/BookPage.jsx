@@ -14,15 +14,15 @@ export default function BookPage() {
   const [progress, setProgress] = useState("want");
   const [processing, setProcessing] = useState(false);
 
-  // ===========================
-  // FAVORITOS
-  // ===========================
+  const [showDateInput, setShowDateInput] = useState(false);
+  const [completionDate, setCompletionDate] = useState("");
+
   const [isFavorite, setIsFavorite] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
 
-  // ---------------------------
-  // Carregar favoritos
-  // ---------------------------
+  // ===========================
+  // Favoritos
+  // ===========================
   useEffect(() => {
     async function loadFavorites() {
       try {
@@ -33,19 +33,16 @@ export default function BookPage() {
         console.error("Erro ao carregar favoritos:", err);
       }
     }
-
     loadFavorites();
   }, [id]);
 
   async function addFavorite() {
     if (favLoading) return;
     setFavLoading(true);
-
     try {
       await api.post(`/profile/favorites/${id}`);
       setIsFavorite(true);
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Erro ao favoritar.");
     } finally {
       setFavLoading(false);
@@ -55,12 +52,10 @@ export default function BookPage() {
   async function removeFavorite() {
     if (favLoading) return;
     setFavLoading(true);
-
     try {
       await api.delete(`/profile/favorites/${id}`);
       setIsFavorite(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert("Erro ao remover dos favoritos.");
     } finally {
       setFavLoading(false);
@@ -68,7 +63,7 @@ export default function BookPage() {
   }
 
   // ===========================
-  // 1) Carregar livro
+  // Carregar livro
   // ===========================
   useEffect(() => {
     async function loadBook() {
@@ -81,12 +76,11 @@ export default function BookPage() {
         setLoading(false);
       }
     }
-
     loadBook();
   }, [id]);
 
   // ===========================
-  // 2) Verificar biblioteca
+  // Biblioteca
   // ===========================
   useEffect(() => {
     async function checkLibrary() {
@@ -100,31 +94,27 @@ export default function BookPage() {
           setInLibrary(true);
           setUserBookId(found.user_book_id);
           setProgress(found.status);
+          setCompletionDate(found.completion_date || "");
         } else {
           setInLibrary(false);
           setUserBookId(null);
           setProgress("want");
+          setCompletionDate("");
         }
       } catch (err) {
         console.error("Erro ao verificar biblioteca:", err);
       }
     }
-
     if (book) checkLibrary();
   }, [book, id]);
 
-  // ===========================
-  // 3) Adicionar à biblioteca
-  // ===========================
   async function addToLibrary() {
     if (processing) return;
     setProcessing(true);
-
     try {
       const res = await api.post(`/users/books/add/${id}`);
       setInLibrary(true);
       setUserBookId(res.data.id);
-      setProgress("want");
     } catch {
       alert("Erro ao adicionar à biblioteca.");
     } finally {
@@ -132,35 +122,57 @@ export default function BookPage() {
     }
   }
 
-  // ===========================
-  // 4) Remover da biblioteca
-  // ===========================
   async function removeFromLibrary() {
     if (!userBookId) return;
-
     try {
       await api.delete(`/users/books/remove/${userBookId}`);
       setInLibrary(false);
       setUserBookId(null);
       setProgress("want");
+      setCompletionDate("");
     } catch {
       alert("Erro ao remover da biblioteca.");
     }
   }
 
-  // ===========================
-  // 5) Atualizar progresso
-  // ===========================
   async function updateProgress(newStatus) {
     if (!userBookId) return;
+
+    if (newStatus === "finished") {
+      const confirmDate = window.confirm(
+        "Deseja adicionar a data de conclusão?"
+      );
+      if (confirmDate) {
+        setShowDateInput(true);
+        return;
+      }
+    }
 
     try {
       await api.put(`/users/books/${userBookId}/progress`, {
         status: newStatus,
+        completion_date: null,
       });
       setProgress(newStatus);
+      setCompletionDate("");
+      setShowDateInput(false);
     } catch {
       alert("Erro ao atualizar progresso.");
+    }
+  }
+
+  async function saveCompletionDate() {
+    if (!completionDate) return alert("Selecione uma data válida.");
+
+    try {
+      await api.put(`/users/books/${userBookId}/progress`, {
+        status: "finished",
+        completion_date: completionDate,
+      });
+      setProgress("finished");
+      setShowDateInput(false);
+    } catch {
+      alert("Erro ao salvar data de conclusão.");
     }
   }
 
@@ -172,86 +184,90 @@ export default function BookPage() {
   }
 
   if (!book) {
-    return (
-      <p className="text-brand-purple p-8">
-        Livro não encontrado.
-      </p>
-    );
+    return <p className="text-brand-purple p-8">Livro não encontrado.</p>;
   }
 
   return (
-    <div className="min-h-screen bg-brand-cream text-brand-text p-10">
+    <div className="min-h-screen bg-brand-cream text-brand-text p-6 sm:p-10">
       <h1 className="text-4xl font-bold mb-6 text-brand-purple">
         {book.title || "Título Desconhecido"}
       </h1>
 
-      <div className="bg-brand-sand border border-brand-taupe p-6 rounded-xl shadow flex gap-8">
+      {/* CARD PRINCIPAL */}
+      <div className="bg-brand-sand border border-brand-taupe p-6 rounded-xl shadow flex flex-col sm:flex-row gap-6 sm:gap-8">
+        {/* CAPA */}
         <img
           src={book.cover_url || ""}
           alt={book.title}
-          className="w-48 h-72 object-cover rounded-xl shadow"
+          className="w-40 h-60 sm:w-48 sm:h-72 object-cover rounded-xl shadow mx-auto sm:mx-0"
         />
 
-        <div className="flex flex-col gap-3">
-          <p className="text-brand-softtext">
-            <b className="text-brand-purple">Autor:</b>{" "}
-            {book.author || "Desconhecido"}
-          </p>
+        {/* CONTEÚDO */}
+        <div className="flex flex-col gap-4 w-full">
+          {/* INFOS */}
+          <div>
+            <p className="text-brand-softtext">
+              <b className="text-brand-purple">Autor:</b>{" "}
+              {book.author || "Desconhecido"}
+            </p>
+            <p className="text-brand-softtext">
+              <b className="text-brand-purple">Ano:</b>{" "}
+              {book.published_year || "N/A"}
+            </p>
+            <p className="text-brand-softtext">
+              <b className="text-brand-purple">Páginas:</b>{" "}
+              {book.page_count || "N/A"}
+            </p>
+          </div>
 
-          <p className="text-brand-softtext">
-            <b className="text-brand-purple">Ano:</b>{" "}
-            {book.published_year || "N/A"}
-          </p>
+          {/* BOTÕES (mobile: entre capa e descrição) */}
+          <div className="flex flex-col gap-3 sm:w-fit">
+            {isFavorite ? (
+              <button
+                onClick={removeFavorite}
+                disabled={favLoading}
+                className="bg-brand-cream border border-brand-purple text-brand-purple px-4 py-2 rounded-lg hover:bg-brand-sand disabled:opacity-60 transition"
 
-          <p className="text-brand-softtext mb-4">
-            <b className="text-brand-purple">Páginas:</b>{" "}
-            {book.page_count || "N/A"}
-          </p>
+              >
+                Remover dos Favoritos
+              </button>
+            ) : (
+              <button
+                onClick={addFavorite}
+                disabled={favLoading}
+                className="bg-brand-purple text-white px-4 py-2 rounded-lg hover:bg-brand-royal disabled:opacity-60"
+              >
+                Adicionar aos Favoritos
+              </button>
+            )}
 
-          {/* FAVORITO */}
-          {isFavorite ? (
-            <button
-              onClick={removeFavorite}
-              disabled={favLoading}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-60"
-            >
-              ❤️ Remover dos Favoritos
-            </button>
-          ) : (
-            <button
-              onClick={addFavorite}
-              disabled={favLoading}
-              className="bg-brand-purple text-white px-4 py-2 rounded-lg hover:bg-brand-royal disabled:opacity-60"
-            >
-              🤍 Adicionar aos Favoritos
-            </button>
-          )}
+            {!inLibrary ? (
+              <button
+                onClick={addToLibrary}
+                disabled={processing}
+                className="bg-brand-purple text-white px-4 py-2 rounded-lg hover:bg-brand-royal disabled:opacity-60"
+              >
+                {processing ? "Adicionando..." : "Adicionar à Biblioteca"}
+              </button>
+            ) : (
+              <button
+                onClick={removeFromLibrary}
+                className="bg-brand-cream border border-brand-purple text-brand-purple px-4 py-2 rounded-lg hover:bg-brand-sand disabled:opacity-60 transition"
 
-          {/* BIBLIOTECA */}
-          {!inLibrary ? (
-            <button
-              onClick={addToLibrary}
-              disabled={processing}
-              className="bg-brand-purple text-white px-4 py-2 rounded-lg hover:bg-brand-royal disabled:opacity-60"
-            >
-              {processing ? "Adicionando..." : "➕ Adicionar à Biblioteca"}
-            </button>
-          ) : (
-            <button
-              onClick={removeFromLibrary}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
-            >
-              🗑️ Remover da Biblioteca
-            </button>
-          )}
+              >
+                Remover da Biblioteca
+              </button>
+            )}
+          </div>
 
+          {/* STATUS */}
           {inLibrary && (
-            <div className="mt-4">
+            <div>
               <h3 className="font-bold text-brand-purple mb-2">
                 Status de Leitura
               </h3>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 {["want", "reading", "finished"].map((s) => (
                   <button
                     key={s}
@@ -270,6 +286,30 @@ export default function BookPage() {
                   </button>
                 ))}
               </div>
+
+              {showDateInput && (
+                <div className="mt-3">
+                  <input
+                    type="date"
+                    value={completionDate}
+                    onChange={(e) => setCompletionDate(e.target.value)}
+                    className="border border-brand-taupe rounded px-2 py-1"
+                  />
+                  <button
+                    onClick={saveCompletionDate}
+                    className="ml-2 bg-brand-purple text-white px-3 py-1 rounded-lg hover:bg-brand-royal"
+                  >
+                    Salvar
+                  </button>
+                </div>
+              )}
+
+              {progress === "finished" && completionDate && (
+                <p className="text-sm text-brand-softtext mt-2">
+                  Concluído em{" "}
+                  {new Date(completionDate).toLocaleDateString("pt-BR")}
+                </p>
+              )}
             </div>
           )}
         </div>

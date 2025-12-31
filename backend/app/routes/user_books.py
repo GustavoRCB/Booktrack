@@ -3,7 +3,7 @@ from app.schemas import UserBookResponse, UserBookDetailed, ProgressUpdate
 from app.dependencies import get_current_user
 from supabase import create_client
 from supabase._sync.client import ClientOptions
-
+from datetime import date
 from app.database.supabase_client import SUPABASE_URL, SUPABASE_KEY
 
 
@@ -12,7 +12,7 @@ from app.database.supabase_client import SUPABASE_URL, SUPABASE_KEY
 # ============================================================
 def get_supabase():
     options = ClientOptions()
-    options.http2 = False  # Desativa HTTP/2 corretamente
+    options.http2 = False
 
     return create_client(
         SUPABASE_URL,
@@ -61,11 +61,10 @@ def list_user_books(user=Depends(get_current_user)):
             supabase.table("progress")
             .select("*")
             .eq("user_book_id", item["id"])
+            .maybe_single()
             .execute()
             .data
         )
-
-        status = progress[0]["status"] if progress else "want"
 
         detailed_list.append({
             "user_book_id": item["id"],
@@ -76,14 +75,15 @@ def list_user_books(user=Depends(get_current_user)):
             "cover_url": book.get("cover_url"),
             "published_year": book.get("published_year"),
             "page_count": book.get("page_count"),
-            "status": status
+            "status": progress["status"] if progress else "want",
+            "completion_date": progress.get("completion_date") if progress else None
         })
 
     return detailed_list
 
 
 # ============================================================
-# 2. ADICIONAR LIVRO À BIBLIOTECA DO USUÁRIO + POPULARIDADE++
+# 2. ADICIONAR LIVRO À BIBLIOTECA
 # ============================================================
 @router.post("/add/{book_id}", response_model=UserBookResponse)
 def add_book(book_id: int, user=Depends(get_current_user)):
@@ -102,7 +102,6 @@ def add_book(book_id: int, user=Depends(get_current_user)):
     if exists:
         raise HTTPException(status_code=400, detail="Livro já está na biblioteca")
 
-    # Criar relação
     insert_result = (
         supabase.table("user_books")
         .insert({"user_id": user_id, "book_id": book_id})
@@ -111,39 +110,16 @@ def add_book(book_id: int, user=Depends(get_current_user)):
 
     user_book_id = insert_result.data[0]["id"]
 
-    # Criar progresso inicial
     supabase.table("progress").insert({
         "user_book_id": user_book_id,
         "status": "want"
     }).execute()
 
-    # ============================================================
-    # POPULARIDADE DO LIVRO (incrementa +1)
-    # ============================================================
-    try:
-        book_data = (
-            supabase.table("public_books")
-            .select("popularity")
-            .eq("id", book_id)
-            .maybe_single()
-            .execute()
-            .data
-        )
-
-        current_popularity = book_data.get("popularity", 0) if book_data else 0
-
-        supabase.table("public_books").update({
-            "popularity": current_popularity + 1
-        }).eq("id", book_id).execute()
-
-    except Exception as e:
-        print("⚠️ Erro ao atualizar popularidade:", e)
-
     return insert_result.data[0]
 
 
 # ============================================================
-# 3. REMOVER LIVRO DA BIBLIOTECA DO USUÁRIO
+# 3. REMOVER LIVRO DA BIBLIOTECA
 # ============================================================
 @router.delete("/remove/{user_book_id}")
 def remove_book(user_book_id: int, user=Depends(get_current_user)):
@@ -169,10 +145,14 @@ def remove_book(user_book_id: int, user=Depends(get_current_user)):
 
 
 # ============================================================
-# 4. ATUALIZAR STATUS DE LEITURA
+# 4. ATUALIZAR STATUS + DATA DE CONCLUSÃO (CORRIGIDO)
 # ============================================================
 @router.put("/{user_book_id}/progress")
-def update_progress(user_book_id: int, update: ProgressUpdate, user=Depends(get_current_user)):
+def update_progress(
+    user_book_id: int,
+    update: ProgressUpdate,
+    user=Depends(get_current_user)
+):
     supabase = get_supabase()
     user_id = user["user_id"]
 
@@ -183,10 +163,38 @@ def update_progress(user_book_id: int, update: ProgressUpdate, user=Depends(get_
         .eq("user_id", user_id)
         .maybe_single()
         .execute()
+        .data
     )
 
-    if not user_book or not user_book.data:
+    if not user_book:
         raise HTTPException(status_code=404, detail="Livro não está na biblioteca")
+
+    # ===============================
+    # TRATAMENTO DA DATA
+    # ===============================
+    completion_date = None
+
+    if update.status == "finished" and update.completion_date:
+        if isinstance(update.completion_date, str):
+            completion_date = date.fromisoformat(update.completion_date)
+        else:
+            completion_date = update.completion_date
+
+        if completion_date > date.today():
+            raise HTTPException(
+                status_code=400,
+                detail="Data de conclusão não pode ser futura"
+            )
+
+    # ✅ CORREÇÃO CRÍTICA: date → string ISO
+    payload = {
+        "status": update.status,
+        "completion_date": (
+            completion_date.isoformat()
+            if completion_date
+            else None
+        )
+    }
 
     progress = (
         supabase.table("progress")
@@ -194,14 +202,17 @@ def update_progress(user_book_id: int, update: ProgressUpdate, user=Depends(get_
         .eq("user_book_id", user_book_id)
         .maybe_single()
         .execute()
+        .data
     )
 
-    if progress and progress.data:
-        supabase.table("progress").update({"status": update.status}).eq("user_book_id", user_book_id).execute()
+    if progress:
+        supabase.table("progress").update(payload).eq(
+            "user_book_id", user_book_id
+        ).execute()
     else:
         supabase.table("progress").insert({
             "user_book_id": user_book_id,
-            "status": update.status
+            **payload
         }).execute()
 
     return {"message": "Status atualizado com sucesso"}

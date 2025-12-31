@@ -39,7 +39,7 @@ export default function Explore() {
 
       {/* Título */}
       <h1 className="text-3xl font-bold mb-6 text-brand-purple">
-        🔍 Explorar Livros
+        Explorar Livros
       </h1>
 
       {/* Barra de busca */}
@@ -109,7 +109,7 @@ export default function Explore() {
 
             {book.published_year && (
               <p className="text-brand-text text-xs mt-1">
-                📅 {book.published_year}
+                {book.published_year}
               </p>
             )}
           </div>
