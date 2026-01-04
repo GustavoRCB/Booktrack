@@ -1,38 +1,26 @@
 # app/database/supabase_client.py
 from supabase import create_client, Client
-from dotenv import load_dotenv
 import os
-import logging
 
-# Configuração de logging
-logger = logging.getLogger(__name__)
+_supabase: Client | None = None
 
-# Carregar variáveis do arquivo .env
-# load_dotenv() deve ser chamada na raiz do projeto (app/main.py) ou aqui
-# Se estiver tendo problemas de carregamento, chame explicitamente:
-load_dotenv() 
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+def get_supabase() -> Client:
+    """
+    Inicializa o cliente Supabase somente quando necessário (lazy init).
+    Evita falhas no startup do FastAPI em produção.
+    """
+    global _supabase
 
-supabase: Client | None = None
+    if _supabase is None:
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
 
-# Tratamento de erro para inicialização do cliente Supabase
-try:
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        # Se as chaves estiverem faltando, levanta um erro, mas o logger captura
-        raise ValueError("❌ SUPABASE_URL ou SUPABASE_KEY não configurados no arquivo .env")
-        
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    logger.info("✅ Cliente Supabase inicializado com sucesso.")
+        if not supabase_url or not supabase_key:
+            raise RuntimeError(
+                "SUPABASE_URL ou SUPABASE_KEY não configurados nas Environment Variables"
+            )
 
-except ValueError as e:
-    # Captura o erro, loga e permite que o servidor inicie com 'supabase' como None
-    logger.error(f"🚨 ERRO CRÍTICO NA CONEXÃO SUPABASE: {e}")
-    logger.warning("Servidor Uvicorn iniciando, mas sem conexão funcional com o banco de dados Supabase.")
-    logger.warning("Verifique o arquivo .env e certifique-se de que SUPABASE_URL e SUPABASE_KEY estão corretos.")
+        _supabase = create_client(supabase_url, supabase_key)
 
-# Opcional: Se quiser que o servidor trave para forçar a correção do .env, use o código abaixo:
-# if not SUPABASE_URL or not SUPABASE_KEY:
-#     raise ValueError("❌ SUPABASE_URL ou SUPABASE_KEY não configurados no arquivo .env")
-# supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    return _supabase
