@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request
-from app.database.supabase_client import supabase
 from hashlib import sha256
 from datetime import datetime, timedelta
+
+from app.database.supabase_client import get_supabase
 
 router = APIRouter(prefix="/stats", tags=["Site Stats"])
 
@@ -13,6 +14,8 @@ COOLDOWN_MINUTES = 30
 # ======================================================
 @router.post("/visit")
 def register_visit(request: Request):
+    supabase = get_supabase()
+
     # 1) Identificar visitante (IP → hash)
     ip = request.client.host
     ip_hash = sha256(ip.encode()).hexdigest()
@@ -30,7 +33,6 @@ def register_visit(request: Request):
     )
 
     if recent.data:
-        # visita ignorada (cooldown ativo)
         res = (
             supabase.table("site_stats")
             .select("total_visits")
@@ -74,6 +76,8 @@ def register_visit(request: Request):
 # ======================================================
 @router.get("/visits")
 def get_visits():
+    supabase = get_supabase()
+
     res = (
         supabase.table("site_stats")
         .select("total_visits")

@@ -1,25 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
+from datetime import date
+
 from app.schemas import UserBookResponse, UserBookDetailed, ProgressUpdate
 from app.dependencies import get_current_user
-from supabase import create_client
-from supabase._sync.client import ClientOptions
-from datetime import date
-from app.database.supabase_client import SUPABASE_URL, SUPABASE_KEY
-
-
-# ============================================================
-# CONFIGURAÇÃO SEGURA DO CLIENT SUPABASE PARA CADA REQUISIÇÃO
-# ============================================================
-def get_supabase():
-    options = ClientOptions()
-    options.http2 = False
-
-    return create_client(
-        SUPABASE_URL,
-        SUPABASE_KEY,
-        options=options
-    )
-
+from app.database.supabase_client import get_supabase
 
 router = APIRouter(prefix="/users/books", tags=["User Books"])
 
@@ -145,7 +129,7 @@ def remove_book(user_book_id: int, user=Depends(get_current_user)):
 
 
 # ============================================================
-# 4. ATUALIZAR STATUS + DATA DE CONCLUSÃO (CORRIGIDO)
+# 4. ATUALIZAR STATUS + DATA DE CONCLUSÃO
 # ============================================================
 @router.put("/{user_book_id}/progress")
 def update_progress(
@@ -169,16 +153,14 @@ def update_progress(
     if not user_book:
         raise HTTPException(status_code=404, detail="Livro não está na biblioteca")
 
-    # ===============================
-    # TRATAMENTO DA DATA
-    # ===============================
     completion_date = None
 
     if update.status == "finished" and update.completion_date:
-        if isinstance(update.completion_date, str):
-            completion_date = date.fromisoformat(update.completion_date)
-        else:
-            completion_date = update.completion_date
+        completion_date = (
+            date.fromisoformat(update.completion_date)
+            if isinstance(update.completion_date, str)
+            else update.completion_date
+        )
 
         if completion_date > date.today():
             raise HTTPException(
@@ -186,14 +168,9 @@ def update_progress(
                 detail="Data de conclusão não pode ser futura"
             )
 
-    # ✅ CORREÇÃO CRÍTICA: date → string ISO
     payload = {
         "status": update.status,
-        "completion_date": (
-            completion_date.isoformat()
-            if completion_date
-            else None
-        )
+        "completion_date": completion_date.isoformat() if completion_date else None
     }
 
     progress = (
