@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from app.database.supabase_client import supabase
+from app.database.supabase_client import get_supabase
 from app.dependencies import get_current_user
 from app.schemas import ReviewCreate, ReviewResponse
 
@@ -15,6 +15,7 @@ def add_or_update_review(
     review_data: ReviewCreate,
     current_user: dict = Depends(get_current_user)
 ):
+    supabase = get_supabase()
     user_id = current_user["user_id"]
 
     if not (1 <= review_data.rating <= 5):
@@ -77,6 +78,7 @@ def delete_review(
     book_id: int,
     current_user: dict = Depends(get_current_user)
 ):
+    supabase = get_supabase()
     user_id = current_user["user_id"]
 
     ub_res = (
@@ -106,6 +108,7 @@ def get_my_review(
     book_id: int,
     current_user: dict = Depends(get_current_user)
 ):
+    supabase = get_supabase()
     user_id = current_user["user_id"]
 
     ub_res = (
@@ -139,6 +142,8 @@ def get_my_review(
 # ============================================================
 @router.get("/book/{book_id}")
 def get_reviews_for_book(book_id: int):
+    supabase = get_supabase()
+
     res = (
         supabase
         .table("reviews")

@@ -1,15 +1,17 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from app.dependencies import get_current_user
-from app.database.supabase_client import supabase
+from app.database.supabase_client import get_supabase
 import uuid
 
 router = APIRouter()
+
 
 @router.post("/avatar")
 async def upload_avatar(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
+    supabase = get_supabase()
     user_id = current_user["user_id"]
 
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -30,7 +32,10 @@ async def upload_avatar(
         )
     except Exception as e:
         print("ERRO STORAGE:", e)
-        raise HTTPException(status_code=500, detail="Erro no upload do avatar")
+        raise HTTPException(
+            status_code=500,
+            detail="Erro no upload do avatar"
+        )
 
     public_url = supabase.storage.from_("avatars").get_public_url(filename)
 

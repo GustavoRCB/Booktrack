@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from datetime import date
 
-from app.database.supabase_client import supabase
+from app.database.supabase_client import get_supabase
 from app.dependencies import get_current_user
 
 router = APIRouter(tags=["Profile"])
@@ -21,6 +21,7 @@ class ProfileUpdate(BaseModel):
 # ======================================================
 @router.get("/me")
 def get_profile(current_user: dict = Depends(get_current_user)):
+    supabase = get_supabase()
     user_id = current_user["user_id"]
 
     # 1) Usuário
@@ -137,9 +138,9 @@ def get_profile(current_user: dict = Depends(get_current_user)):
         "favorites": favorite_books,
         "recent_books": recent_books,
         "stats": {
-            "books_read": len(finished_books),              # TOTAL
-            "books_read_this_year": len(finished_books_this_year),  # ANO ATUAL
-            "pages_read": 0,  # evolução futura
+            "books_read": len(finished_books),
+            "books_read_this_year": len(finished_books_this_year),
+            "pages_read": 0,
             "average_rating": round(sum(ratings) / len(ratings), 2)
             if ratings else None,
         },
@@ -154,6 +155,7 @@ def update_profile(
     data: ProfileUpdate,
     current_user: dict = Depends(get_current_user)
 ):
+    supabase = get_supabase()
     user_id = current_user["user_id"]
 
     update_data = {}

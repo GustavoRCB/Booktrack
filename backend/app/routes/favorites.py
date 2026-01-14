@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.dependencies import get_current_user
-from app.database.supabase_client import supabase
+from app.database.supabase_client import get_supabase
 
 router = APIRouter(tags=["Favorites"])
 
@@ -10,6 +10,7 @@ router = APIRouter(tags=["Favorites"])
 # --------------------------------------------------
 @router.get("/favorites")
 def list_favorites(current_user: dict = Depends(get_current_user)):
+    supabase = get_supabase()
     user_id = current_user["user_id"]
 
     user_res = (
@@ -43,6 +44,7 @@ def list_favorites(current_user: dict = Depends(get_current_user)):
 # --------------------------------------------------
 @router.post("/favorites/{book_id}")
 def add_favorite(book_id: int, current_user: dict = Depends(get_current_user)):
+    supabase = get_supabase()
     user_id = current_user["user_id"]
 
     user_res = (
@@ -76,6 +78,7 @@ def add_favorite(book_id: int, current_user: dict = Depends(get_current_user)):
 # --------------------------------------------------
 @router.delete("/favorites/{book_id}")
 def remove_favorite(book_id: int, current_user: dict = Depends(get_current_user)):
+    supabase = get_supabase()
     user_id = current_user["user_id"]
 
     user_res = (
