@@ -2,7 +2,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-import os
 
 # ================================
 # 🚀 FASTAPI INIT
@@ -14,17 +13,12 @@ app = FastAPI(
 )
 
 # ================================
-# 🌐 CORS
+# 🌐 CORS (CORRIGIDO PARA RAILWAY + FRONTEND)
 # ================================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        # depois adicione seu domínio Vercel aqui
-        # "https://booktrack.vercel.app"
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],  # 🔥 permite frontend local e Vercel
+    allow_credentials=False,  # ⚠️ obrigatório quando allow_origins="*"
     allow_methods=["*"],
     allow_headers=["*"],
 )
