@@ -30,7 +30,7 @@ app.add_middleware(
     allow_origins=[
         "https://litto.up.railway.app",
         # quando subir o frontend:
-         "https://litto-nine.vercel.app/"
+         "https://litto-nine.vercel.app"
         
     ],
     allow_credentials=True,
